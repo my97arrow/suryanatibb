@@ -1192,6 +1192,13 @@ body.dark #pharmacyTable td {
   box-shadow: var(--shadow);
 }
 
+.social-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
 .developer-info {
   display: flex;
   gap: 12px;
