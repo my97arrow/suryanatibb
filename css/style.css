@@ -1195,8 +1195,10 @@ body.dark #pharmacyTable td {
 .social-buttons {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   margin-top: 8px;
+  justify-content: center;
 }
 
 .developer-info {
