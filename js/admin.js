@@ -234,10 +234,45 @@ function loadPlaces() {
   }
 }
 
+async function loadPlacesFromDb() {
+  if (!window.db) return null;
+  try {
+    const snapshot = await window.db.collection("places").orderBy("name").get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch {
+    return null;
+  }
+}
+
+async function savePlaceToDb(data, id = null) {
+  if (!window.db) return null;
+  if (id) {
+    await window.db.collection("places").doc(id).set(data, { merge: true });
+    return id;
+  }
+  const ref = await window.db.collection("places").add(data);
+  return ref.id;
+}
+
+async function deletePlaceFromDb(id) {
+  if (!window.db || !id) return;
+  await window.db.collection("places").doc(id).delete();
+}
+
 function ensureSeedPlaces() {
   if (!places.length) {
-    places = SEED_PLACES;
-    savePlaces();
+    (async () => {
+      if (window.db) {
+        const batch = window.db.batch();
+        SEED_PLACES.forEach(place => {
+          const ref = window.db.collection("places").doc();
+          batch.set(ref, place);
+        });
+        await batch.commit();
+      }
+      places = SEED_PLACES;
+      savePlaces();
+    })();
   }
 }
 
@@ -665,17 +700,23 @@ function savePlace() {
     schedule: dutyDates
   };
 
-  if (editIndex.value !== "") {
-    places[editIndex.value] = data;
-    logAction(`تم تعديل ${data.name}`);
-  } else {
-    places.push(data);
-    logAction(`تمت إضافة ${data.name}`);
-  }
-
-  savePlaces();
-  closeModal();
-  renderAdmin();
+  (async () => {
+    if (editIndex.value !== "") {
+      const idx = Number(editIndex.value);
+      const existing = places[idx];
+      const id = existing?.id || null;
+      const savedId = await savePlaceToDb(data, id);
+      places[idx] = { ...data, id: savedId || id };
+      logAction(`تم تعديل ${data.name}`);
+    } else {
+      const savedId = await savePlaceToDb(data, null);
+      places.push({ ...data, id: savedId });
+      logAction(`تمت إضافة ${data.name}`);
+    }
+    savePlaces();
+    closeModal();
+    renderAdmin();
+  })();
 }
 
 function deletePlace(i) {
@@ -689,10 +730,14 @@ function deletePlace(i) {
     return;
   }
   const nameValue = places[i]?.name || "عنصر";
-  places.splice(i, 1);
-  savePlaces();
-  logAction(`تم حذف ${nameValue}`);
-  renderAdmin();
+  const id = places[i]?.id;
+  (async () => {
+    await deletePlaceFromDb(id);
+    places.splice(i, 1);
+    savePlaces();
+    logAction(`تم حذف ${nameValue}`);
+    renderAdmin();
+  })();
 }
 
 function renderAdmin() {
@@ -767,12 +812,18 @@ function deleteSelectedRows() {
   if (!checks.length) return;
   if (!confirm("هل تريد حذف العناصر المحددة؟")) return;
   const indexes = [...checks].map(c => Number(c.dataset.index)).sort((a, b) => b - a);
-  indexes.forEach(i => {
-    if (hasScopeForPlace(places[i])) places.splice(i, 1);
-  });
-  savePlaces();
-  logAction("تم حذف عناصر محددة");
-  renderAdmin();
+  (async () => {
+    for (const i of indexes) {
+      if (hasScopeForPlace(places[i])) {
+        const id = places[i]?.id;
+        await deletePlaceFromDb(id);
+        places.splice(i, 1);
+      }
+    }
+    savePlaces();
+    logAction("تم حذف عناصر محددة");
+    renderAdmin();
+  })();
 }
 
 function updateAdminStats(list) {
@@ -1175,7 +1226,7 @@ function renderPagination(container, totalItems, current, onPage) {
   }
 }
 
-function bootApp() {
+async function bootApp() {
   if (!currentUser) return;
   if (loginPanel) loginPanel.hidden = true;
   if (adminApp) adminApp.hidden = false;
@@ -1183,7 +1234,7 @@ function bootApp() {
   setUserBadge();
 
   locations = loadLocations();
-  places = loadPlaces();
+  places = (await loadPlacesFromDb()) || loadPlaces();
   ensureSeedPlaces();
   logs = loadLogs();
   adminPage = 1;

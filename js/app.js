@@ -99,6 +99,30 @@ function loadPlaces() {
   }
 }
 
+async function loadPlacesFromDb() {
+  if (!window.db) return null;
+  try {
+    const snapshot = await window.db.collection("places").orderBy("name").get();
+    const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return list;
+  } catch {
+    return null;
+  }
+}
+
+async function saveSeedIfNeeded() {
+  const list = await loadPlacesFromDb();
+  if (list && list.length) return list;
+  if (!window.db) return null;
+  const batch = window.db.batch();
+  SEED_PLACES.forEach(place => {
+    const ref = window.db.collection("places").doc();
+    batch.set(ref, place);
+  });
+  await batch.commit();
+  return SEED_PLACES;
+}
+
 function showToast(message) {
   if (!elements.toast) return;
   elements.toast.textContent = message;
@@ -484,12 +508,19 @@ function locateUser(showToastMessage = true) {
   );
 }
 
-function init() {
-  let rawPlaces = loadPlaces();
-  if (!rawPlaces.length) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_PLACES));
-    rawPlaces = SEED_PLACES;
+async function init() {
+  let rawPlaces = await loadPlacesFromDb();
+  if (!rawPlaces || !rawPlaces.length) {
+    rawPlaces = await saveSeedIfNeeded();
   }
+  if (!rawPlaces || !rawPlaces.length) {
+    rawPlaces = loadPlaces();
+    if (!rawPlaces.length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_PLACES));
+      rawPlaces = SEED_PLACES;
+    }
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
   allPlaces = enrichPlaces(rawPlaces);
 
   populateSelect(elements.governorate, unique(allPlaces.map(p => p.governorate)), "كل المحافظات");
@@ -571,4 +602,6 @@ function init() {
   applyFilters();
 }
 
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("DOMContentLoaded", () => {
+  init();
+});

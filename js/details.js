@@ -13,6 +13,16 @@ function loadPlaces() {
   }
 }
 
+async function loadPlacesFromDb() {
+  if (!window.db) return null;
+  try {
+    const snapshot = await window.db.collection("places").orderBy("name").get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch {
+    return null;
+  }
+}
+
 function isOnDuty(place) {
   return Array.isArray(place.schedule) && place.schedule.includes(todayISO);
 }
@@ -109,10 +119,13 @@ function renderDetail(place) {
   }
 }
 
-(function init() {
+(async function init() {
   const params = new URLSearchParams(window.location.search);
   const id = Number(params.get("id"));
-  const places = loadPlaces();
+  let places = await loadPlacesFromDb();
+  if (!places || !places.length) {
+    places = loadPlaces();
+  }
 
   if (!places.length || Number.isNaN(id) || !places[id]) {
     detailEmpty.hidden = false;
