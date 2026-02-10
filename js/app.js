@@ -100,39 +100,53 @@ function loadPlaces() {
 }
 
 async function loadPlacesFromDb() {
-  if (!window.db) return null;
+  if (!window.supabaseClient) return null;
   try {
-    const snapshot = await window.db.collection("places").orderBy("name").get();
-    const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    return list;
+    const { data, error } = await window.supabaseClient
+      .from("places")
+      .select("*")
+      .order("name", { ascending: true });
+    if (error) throw error;
+    return data || [];
   } catch {
     return null;
   }
 }
 
 function subscribePlacesFromDb() {
-  if (!window.db) return null;
-  return window.db.collection("places").orderBy("name").onSnapshot(snapshot => {
-    const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const deduped = dedupePlaces(list);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
-    allPlaces = enrichPlaces(deduped);
-    updateCityOptions();
-    applyFilters();
-  });
+  if (!window.supabaseClient) return null;
+  return window.supabaseClient
+    .channel("places-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "places" },
+      async () => {
+        const list = await loadPlacesFromDb();
+        if (!list) return;
+        const deduped = dedupePlaces(list);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
+        allPlaces = enrichPlaces(deduped);
+        updateCityOptions();
+        applyFilters();
+      }
+    )
+    .subscribe();
 }
 
 async function saveSeedIfNeeded() {
   const list = await loadPlacesFromDb();
   if (list && list.length) return list;
-  if (!window.db) return null;
-  const batch = window.db.batch();
-  SEED_PLACES.forEach(place => {
-    const ref = window.db.collection("places").doc();
-    batch.set(ref, place);
-  });
-  await batch.commit();
-  return SEED_PLACES;
+  if (!window.supabaseClient) return null;
+  try {
+    const { data, error } = await window.supabaseClient
+      .from("places")
+      .insert(SEED_PLACES)
+      .select("*");
+    if (error) throw error;
+    return data || SEED_PLACES;
+  } catch {
+    return SEED_PLACES;
+  }
 }
 
 function showToast(message) {
@@ -376,7 +390,7 @@ function renderCards(list) {
           <a class="icon-btn ${place.whatsapp || place.phone ? "" : "disabled"}" href="${place.whatsapp || place.phone ? `https://wa.me/${place.whatsapp || place.phone}` : "#"}" target="_blank" rel="noreferrer">
             <i class="fa-brands fa-whatsapp"></i>
           </a>
-          <a class="icon-btn" href="details.html?id=${place._index}">
+          <a class="icon-btn" href="details.html?id=${place.id || place._index}">
             <i class="fa-solid fa-up-right-from-square"></i>
           </a>
         </div>
@@ -387,12 +401,12 @@ function renderCards(list) {
 
     card.addEventListener("click", event => {
       if (event.target.closest(".icon-btn")) return;
-      window.location.href = `details.html?id=${place._index}`;
+      window.location.href = `details.html?id=${place.id || place._index}`;
     });
 
     card.addEventListener("keydown", event => {
       if (event.key !== "Enter") return;
-      window.location.href = `details.html?id=${place._index}`;
+      window.location.href = `details.html?id=${place.id || place._index}`;
     });
   });
 

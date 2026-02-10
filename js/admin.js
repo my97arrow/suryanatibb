@@ -244,10 +244,14 @@ function loadPlaces() {
 }
 
 async function loadPlacesFromDb() {
-  if (!window.db) return null;
+  if (!window.supabaseClient) return null;
   try {
-    const snapshot = await window.db.collection("places").orderBy("name").get();
-    const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data, error } = await window.supabaseClient
+      .from("places")
+      .select("*")
+      .order("name", { ascending: true });
+    if (error) throw error;
+    const list = data || [];
     const seen = new Map();
     const duplicates = [];
     list.forEach(item => {
@@ -259,7 +263,9 @@ async function loadPlacesFromDb() {
       }
     });
     if (duplicates.length) {
-      await Promise.all(duplicates.map(d => window.db.collection("places").doc(d.id).delete()));
+      await Promise.all(
+        duplicates.map(d => window.supabaseClient.from("places").delete().eq("id", d.id))
+      );
     }
     return [...seen.values()];
   } catch {
@@ -268,30 +274,36 @@ async function loadPlacesFromDb() {
 }
 
 async function savePlaceToDb(data, id = null) {
-  if (!window.db) return null;
+  if (!window.supabaseClient) return null;
   if (id) {
-    await window.db.collection("places").doc(id).set(data, { merge: true });
-    return id;
+    const { data: updated, error } = await window.supabaseClient
+      .from("places")
+      .update(data)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return updated?.id || id;
   }
-  const ref = await window.db.collection("places").add(data);
-  return ref.id;
+  const { data: inserted, error } = await window.supabaseClient
+    .from("places")
+    .insert(data)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return inserted?.id || null;
 }
 
 async function deletePlaceFromDb(id) {
-  if (!window.db || !id) return;
-  await window.db.collection("places").doc(id).delete();
+  if (!window.supabaseClient || !id) return;
+  await window.supabaseClient.from("places").delete().eq("id", id);
 }
 
 function ensureSeedPlaces() {
   if (!places.length) {
     (async () => {
-      if (window.db) {
-        const batch = window.db.batch();
-        SEED_PLACES.forEach(place => {
-          const ref = window.db.collection("places").doc();
-          batch.set(ref, place);
-        });
-        await batch.commit();
+      if (window.supabaseClient) {
+        await window.supabaseClient.from("places").insert(SEED_PLACES);
       }
       places = SEED_PLACES;
       savePlaces();

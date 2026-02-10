@@ -14,10 +14,14 @@ function loadPlaces() {
 }
 
 async function loadPlacesFromDb() {
-  if (!window.db) return null;
+  if (!window.supabaseClient) return null;
   try {
-    const snapshot = await window.db.collection("places").orderBy("name").get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data, error } = await window.supabaseClient
+      .from("places")
+      .select("*")
+      .order("name", { ascending: true });
+    if (error) throw error;
+    return data || [];
   } catch {
     return null;
   }
@@ -121,17 +125,26 @@ function renderDetail(place) {
 
 (async function init() {
   const params = new URLSearchParams(window.location.search);
-  const id = Number(params.get("id"));
+  const rawId = params.get("id");
+  const id = rawId ? String(rawId) : "";
   let places = await loadPlacesFromDb();
   if (!places || !places.length) {
     places = loadPlaces();
   }
 
-  if (!places.length || Number.isNaN(id) || !places[id]) {
+  let place = null;
+  if (id) {
+    place = places.find(p => String(p.id) === id) || null;
+  }
+  if (!place && !Number.isNaN(Number(id))) {
+    place = places[Number(id)] || null;
+  }
+
+  if (!places.length || !place) {
     detailEmpty.hidden = false;
     return;
   }
 
-  const place = { ...places[id], _index: id };
+  place = { ...place, _index: Number(id) };
   renderDetail(place);
 })();
