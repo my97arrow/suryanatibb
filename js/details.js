@@ -1,5 +1,9 @@
 ﻿const STORAGE_KEY = "places";
-const todayISO = new Date().toISOString().split("T")[0];
+function localISODate(d = new Date()) {
+  const tz = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tz).toISOString().split("T")[0];
+}
+const todayISO = localISODate();
 
 const detailRoot = document.getElementById("detail");
 const detailEmpty = document.getElementById("detailEmpty");

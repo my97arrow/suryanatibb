@@ -5,7 +5,11 @@ const LOG_KEY = "healthDutyLogs";
 const UPDATED_KEY = "healthDutyUpdated";
 const BACKUP_KEY = "healthDutyBackups";
 const LOCATIONS_KEY = "healthDutyLocations";
-const todayISO = new Date().toISOString().split("T")[0];
+function localISODate(d = new Date()) {
+  const tz = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tz).toISOString().split("T")[0];
+}
+const todayISO = localISODate();
 
 const SEED_PLACES = [
   {
