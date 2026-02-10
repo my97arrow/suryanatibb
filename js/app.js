@@ -110,6 +110,18 @@ async function loadPlacesFromDb() {
   }
 }
 
+function subscribePlacesFromDb() {
+  if (!window.db) return null;
+  return window.db.collection("places").orderBy("name").onSnapshot(snapshot => {
+    const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const deduped = dedupePlaces(list);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
+    allPlaces = enrichPlaces(deduped);
+    updateCityOptions();
+    applyFilters();
+  });
+}
+
 async function saveSeedIfNeeded() {
   const list = await loadPlacesFromDb();
   if (list && list.length) return list;
@@ -529,7 +541,93 @@ function locateUser(showToastMessage = true) {
 }
 
 async function init() {
-  let rawPlaces = [];
+  // 1) Show cached data immediately for fast first paint
+  let rawPlaces = loadPlaces();
+  if (!rawPlaces.length) {
+    rawPlaces = SEED_PLACES;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
+  }
+  allPlaces = enrichPlaces(dedupePlaces(rawPlaces));
+
+  populateSelect(elements.governorate, unique(allPlaces.map(p => p.governorate)), "كل المحافظات");
+  updateCityOptions();
+
+  const urlFilters = parseUrlFilters();
+  const savedFilters = loadFilters();
+  applyFilterState(urlFilters || savedFilters);
+  updateCompactToggle();
+
+  const debouncedApply = debounce(applyFilters, 250);
+  [elements.search].filter(Boolean).forEach(el => el.addEventListener("input", debouncedApply));
+  [elements.filter, elements.governorate, elements.city, elements.sortBy]
+    .filter(Boolean)
+    .forEach(el => el.addEventListener("input", applyFilters));
+
+  if (elements.governorate) {
+    elements.governorate.addEventListener("change", () => {
+      updateCityOptions();
+      applyFilters();
+    });
+  }
+
+  if (elements.clearFilters) {
+    elements.clearFilters.addEventListener("click", clearFilters);
+  }
+
+  if (elements.themeToggle) {
+    elements.themeToggle.addEventListener("click", () => {
+      const isDark = document.body.classList.contains("dark");
+      applyTheme(isDark ? "light" : "dark");
+    });
+  }
+
+  if (elements.toggleCompact) {
+    elements.toggleCompact.addEventListener("click", () => {
+      compactMode = !compactMode;
+      updateCompactToggle();
+    });
+  }
+
+  if (elements.loadMore) {
+    elements.loadMore.addEventListener("click", () => {
+      currentPage += 1;
+      applyFilters();
+    });
+  }
+
+  window.addEventListener("online", () => updateStatusBar("أنت متصل بالإنترنت"));
+  window.addEventListener("offline", () => updateStatusBar("أنت غير متصل بالإنترنت"));
+
+  if (elements.locateMe) {
+    elements.locateMe.addEventListener("click", () => locateUser(true));
+  }
+
+  if (elements.shareResults) {
+    elements.shareResults.addEventListener("click", async () => {
+      const url = buildShareUrl();
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: document.title, url });
+          return;
+        } catch {
+          // fallback to clipboard
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast("تم نسخ رابط النتائج");
+      } catch {
+        showToast("تعذر نسخ الرابط");
+      }
+    });
+  }
+
+  initTheme();
+  initMap();
+  locateUser(false);
+  applyFilters();
+
+  // 2) Fetch from Firestore then keep in sync live
   try {
     rawPlaces = await loadPlacesFromDb();
     if (!rawPlaces || !rawPlaces.length) {
@@ -537,92 +635,15 @@ async function init() {
     }
     if (!rawPlaces || !rawPlaces.length) {
       rawPlaces = loadPlaces();
-      if (!rawPlaces.length) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_PLACES));
-        rawPlaces = SEED_PLACES;
-      }
-  }
-  rawPlaces = dedupePlaces(rawPlaces || []);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
-  allPlaces = enrichPlaces(rawPlaces);
-
-    populateSelect(elements.governorate, unique(allPlaces.map(p => p.governorate)), "كل المحافظات");
+    }
+    rawPlaces = dedupePlaces(rawPlaces || []);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
+    allPlaces = enrichPlaces(rawPlaces);
     updateCityOptions();
-
-    const urlFilters = parseUrlFilters();
-    const savedFilters = loadFilters();
-    applyFilterState(urlFilters || savedFilters);
-    updateCompactToggle();
-
-    const debouncedApply = debounce(applyFilters, 250);
-    [elements.search].filter(Boolean).forEach(el => el.addEventListener("input", debouncedApply));
-    [elements.filter, elements.governorate, elements.city, elements.sortBy]
-      .filter(Boolean)
-      .forEach(el => el.addEventListener("input", applyFilters));
-
-    if (elements.governorate) {
-      elements.governorate.addEventListener("change", () => {
-        updateCityOptions();
-        applyFilters();
-      });
-    }
-
-    if (elements.clearFilters) {
-      elements.clearFilters.addEventListener("click", clearFilters);
-    }
-
-    if (elements.themeToggle) {
-      elements.themeToggle.addEventListener("click", () => {
-        const isDark = document.body.classList.contains("dark");
-        applyTheme(isDark ? "light" : "dark");
-      });
-    }
-
-    if (elements.toggleCompact) {
-      elements.toggleCompact.addEventListener("click", () => {
-        compactMode = !compactMode;
-        updateCompactToggle();
-      });
-    }
-
-    if (elements.loadMore) {
-      elements.loadMore.addEventListener("click", () => {
-        currentPage += 1;
-        applyFilters();
-      });
-    }
-
-    window.addEventListener("online", () => updateStatusBar("أنت متصل بالإنترنت"));
-    window.addEventListener("offline", () => updateStatusBar("أنت غير متصل بالإنترنت"));
-
-    if (elements.locateMe) {
-      elements.locateMe.addEventListener("click", () => locateUser(true));
-    }
-
-    if (elements.shareResults) {
-      elements.shareResults.addEventListener("click", async () => {
-        const url = buildShareUrl();
-        if (navigator.share) {
-          try {
-            await navigator.share({ title: document.title, url });
-            return;
-          } catch {
-            // fallback to clipboard
-          }
-        }
-        try {
-          await navigator.clipboard.writeText(url);
-          showToast("تم نسخ رابط النتائج");
-        } catch {
-          showToast("تعذر نسخ الرابط");
-        }
-      });
-    }
-  } finally {
-    initTheme();
-    initMap();
-    locateUser(false);
     applyFilters();
+    subscribePlacesFromDb();
+  } catch {
+    // keep local data
   }
 }
 
