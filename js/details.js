@@ -32,12 +32,33 @@ async function loadPlacesFromDb() {
 }
 
 function isOnDuty(place) {
-  if (!Array.isArray(place.schedule)) return false;
-  return place.schedule
-    .map(d => (d || "").toString().split("T")[0])
-    .includes(todayISO);
+  const schedule = normalizeSchedule(place.schedule);
+  return schedule.includes(todayISO);
 }
 
+function normalizeSchedule(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value
+      .map(d => (d || "").toString().split("T")[0])
+      .filter(Boolean);
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.map(d => (d || "").toString().split("T")[0]).filter(Boolean);
+      }
+    } catch {
+      // not JSON
+    }
+    return value
+      .split(/[|,]/)
+      .map(d => d.trim().split("T")[0])
+      .filter(Boolean);
+  }
+  return [];
+}
 function typeIcon(type) {
   if (type === "hospital") return "fa-hospital";
   if (type === "dispensary") return "fa-house-medical";
@@ -48,7 +69,7 @@ function typeIcon(type) {
 
 function renderDetail(place) {
   const duty = isOnDuty(place);
-  const schedule = Array.isArray(place.schedule) ? place.schedule : [];
+  const schedule = normalizeSchedule(place.schedule);
   const showDuty = place.type === "pharmacy";
   const media = place.image
     ? `<img class="detail-photo" src="${place.image}" alt="${place.name}">`
