@@ -7,6 +7,63 @@ const BACKUP_KEY = "healthDutyBackups";
 const LOCATIONS_KEY = "healthDutyLocations";
 const todayISO = new Date().toISOString().split("T")[0];
 
+const SEED_PLACES = [
+  {
+    name: "صيدلية الشفاء",
+    type: "pharmacy",
+    specialty: "",
+    phone: "0950000000",
+    whatsapp: "963950000000",
+    email: "",
+    governorate: "دمشق",
+    city: "دمشق",
+    address: "شارع الثورة - جانب مشفى الهلال",
+    hours: "24 ساعة",
+    services: "قياس ضغط، سكري، إسعافات أولية",
+    notes: "",
+    image: "",
+    lat: 33.5138,
+    lng: 36.2765,
+    schedule: [todayISO]
+  },
+  {
+    name: "عيادة الدكتور أمجد",
+    type: "clinic",
+    specialty: "قلبية",
+    phone: "0941111111",
+    whatsapp: "",
+    email: "",
+    governorate: "حلب",
+    city: "حلب",
+    address: "السبيل - مقابل مشفى الجامعة",
+    hours: "9:00 - 20:00",
+    services: "استشارات قلبية، تخطيط قلب",
+    notes: "",
+    image: "",
+    lat: 36.2021,
+    lng: 37.1343,
+    schedule: []
+  },
+  {
+    name: "مخبر الأمل الطبي",
+    type: "lab",
+    specialty: "تحاليل",
+    phone: "0932222222",
+    whatsapp: "",
+    email: "",
+    governorate: "حمص",
+    city: "حمص",
+    address: "الزهراء - قرب الدوار",
+    hours: "8:00 - 19:00",
+    services: "تحاليل شاملة، سحب منزلي",
+    notes: "",
+    image: "",
+    lat: 34.7309,
+    lng: 36.7094,
+    schedule: []
+  }
+];
+
 let map = null;
 let marker = null;
 let dutyPicker = null;
@@ -174,6 +231,13 @@ function loadPlaces() {
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
+  }
+}
+
+function ensureSeedPlaces() {
+  if (!places.length) {
+    places = SEED_PLACES;
+    savePlaces();
   }
 }
 
@@ -1120,6 +1184,7 @@ function bootApp() {
 
   locations = loadLocations();
   places = loadPlaces();
+  ensureSeedPlaces();
   logs = loadLogs();
   adminPage = 1;
   logPage = 1;
