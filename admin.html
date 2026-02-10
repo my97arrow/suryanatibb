@@ -1,0 +1,316 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>لوحة التحكم</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body class="admin">
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-mark"><i class="fa-solid fa-hospital"></i></span>
+      <div>
+        <h1>لوحة التحكم</h1>
+        <p>إدارة المشافي والمستوصفات والصيدليات والعيادات والمخابر.</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div id="userBadge" class="user-badge" hidden></div>
+      <button id="logoutBtn" class="btn ghost" type="button" hidden>
+        تسجيل الخروج
+      </button>
+      <a class="btn ghost" href="index.html">العودة للموقع</a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <section id="loginPanel" class="login-panel">
+    <div class="login-card">
+      <h2>تسجيل الدخول</h2>
+      <p class="muted">الرجاء إدخال بيانات الدخول للوصول إلى لوحة التحكم.</p>
+      <div class="field">
+        <label for="loginUser">اسم المستخدم</label>
+        <input id="loginUser" placeholder="مثال: admin">
+      </div>
+      <div class="field">
+        <label for="loginPass">كلمة المرور</label>
+        <input id="loginPass" type="password" placeholder="••••••••">
+      </div>
+      <button id="loginBtn" class="btn primary" type="button">دخول</button>
+      <p class="muted small">الحساب الافتراضي: admin / admin123</p>
+    </div>
+  </section>
+
+  <section id="adminApp" hidden>
+  <section class="stats" aria-label="ملخص الإدارة">
+    <div class="stat-card">
+      <span>عدد الأماكن</span>
+      <strong id="adminTotal">0</strong>
+    </div>
+    <div class="stat-card">
+      <span>مناوبة اليوم</span>
+      <strong id="adminOnDuty">0</strong>
+    </div>
+    <div class="stat-card">
+      <span>آخر تحديث</span>
+      <strong id="adminUpdated">-</strong>
+    </div>
+  </section>
+
+  <section class="admin-toolbar">
+    <button class="btn primary" onclick="openModal()">
+      <i class="fa-solid fa-plus"></i>
+      إضافة مكان طبي
+    </button>
+    <div class="toolbar-actions">
+      <button id="exportBtn" class="btn ghost" onclick="exportData()">تصدير البيانات</button>
+      <button id="exportCsvBtn" class="btn ghost" onclick="exportCSV()">تصدير CSV</button>
+      <button id="backupBtn" class="btn ghost" onclick="backupNow()">نسخة احتياطية</button>
+      <button id="restoreBtn" class="btn ghost" onclick="restoreBackup()">استعادة آخر نسخة</button>
+      <button id="importBtn" class="btn ghost" onclick="triggerImport()">استيراد بيانات</button>
+      <button id="clearAllBtn" class="btn danger" onclick="clearAll()">حذف الكل</button>
+    </div>
+    <input id="importFile" type="file" accept="application/json" hidden>
+  </section>
+
+  <section class="controls" aria-label="فلاتر الإدارة">
+    <div class="field">
+      <label for="filterType">النوع</label>
+      <select id="filterType">
+        <option value="all">كل الأنواع</option>
+        <option value="pharmacy">صيدلية</option>
+        <option value="hospital">مشفى</option>
+        <option value="dispensary">مستوصف</option>
+        <option value="clinic">عيادة</option>
+        <option value="lab">مخبر طبي</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="filterGov">المحافظة</label>
+      <input id="filterGov" placeholder="ابحث عن محافظة">
+    </div>
+    <div class="field">
+      <label for="filterCity">المدينة</label>
+      <input id="filterCity" placeholder="ابحث عن مدينة">
+    </div>
+  </section>
+
+  <section class="log-panel" aria-label="جدول الأماكن">
+    <h3>جدول الأماكن الطبية</h3>
+    <div class="table-actions">
+      <button id="deleteSelected" class="btn danger" type="button">حذف المحدد</button>
+    </div>
+    <div class="table-wrap">
+      <table id="adminTable">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="selectAll"></th>
+            <th>الاسم</th>
+            <th>النوع</th>
+            <th>المحافظة</th>
+            <th>المدينة</th>
+            <th>الهاتف</th>
+            <th>العنوان</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="adminPagination"></div>
+    <div id="adminEmpty" class="empty-state" hidden>
+      <i class="fa-regular fa-circle-xmark"></i>
+      <p>لا توجد أماكن مطابقة للفلاتر.</p>
+    </div>
+  </section>
+
+  <section id="userManagement" class="log-panel" hidden>
+    <h3>إدارة المستخدمين</h3>
+    <div class="controls">
+      <div class="field">
+        <label for="userFilter">بحث المستخدمين</label>
+        <input id="userFilter" placeholder="ابحث بالاسم أو الدور أو المحافظة">
+      </div>
+    </div>
+    <div class="user-form">
+      <div class="field">
+        <label for="userName">اسم المستخدم</label>
+        <input id="userName" placeholder="اسم المستخدم">
+      </div>
+      <div class="field">
+        <label for="userPass">كلمة المرور</label>
+        <input id="userPass" type="password" placeholder="كلمة المرور">
+      </div>
+      <div class="field">
+        <label for="userPhone">رقم الهاتف</label>
+        <input id="userPhone" placeholder="رقم الهاتف">
+      </div>
+      <div class="field">
+        <label for="userAddress">العنوان</label>
+        <input id="userAddress" placeholder="العنوان">
+      </div>
+      <div class="field">
+        <label for="userRole">الدور</label>
+        <select id="userRole">
+          <option value="super">مسؤول مميز</option>
+          <option value="governorate">مسؤول محافظة</option>
+          <option value="city">مسؤول مدينة</option>
+          <option value="viewer">مشاهدة فقط</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="userGov">المحافظة</label>
+        <select id="userGov"></select>
+      </div>
+      <div class="field">
+        <label for="userCity">المدينة</label>
+        <select id="userCity"></select>
+      </div>
+      <button id="addUserBtn" class="btn primary" type="button">إضافة مستخدم</button>
+      <button id="updateUserBtn" class="btn ghost" type="button" hidden>تحديث بيانات</button>
+    </div>
+    <div id="usersList" class="user-list"></div>
+  </section>
+
+  <section id="locationManagement" class="log-panel" hidden>
+    <h3>إدارة المحافظات والمدن (للمسؤول المميز فقط)</h3>
+    <div class="user-form">
+      <div class="field">
+        <label for="locGov">المحافظة</label>
+        <select id="locGov"></select>
+      </div>
+      <div class="field">
+        <label for="locCity">المدينة</label>
+        <select id="locCity"></select>
+      </div>
+      <div class="field">
+        <label for="newGov">إضافة محافظة</label>
+        <input id="newGov" placeholder="اسم المحافظة">
+      </div>
+      <div class="field">
+        <label for="newCity">إضافة مدينة</label>
+        <input id="newCity" placeholder="اسم المدينة">
+      </div>
+    </div>
+    <div class="loc-actions">
+      <button id="addGovBtn" class="btn primary" type="button">إضافة محافظة</button>
+      <button id="addCityBtn" class="btn primary" type="button">إضافة مدينة</button>
+      <button id="removeGovBtn" class="btn danger" type="button">حذف محافظة</button>
+      <button id="removeCityBtn" class="btn danger" type="button">حذف مدينة</button>
+    </div>
+  </section>
+
+  <section class="log-panel" aria-label="سجل النشاطات">
+    <h3>سجل النشاط</h3>
+    <ul id="adminLog" class="log-list"></ul>
+    <div class="pagination" id="logPagination"></div>
+  </section>
+  </section>
+</main>
+
+<div class="modal" id="placeModal" aria-hidden="true">
+  <div class="modal-box modal-wide">
+    <h3 id="modalTitle">إضافة مكان طبي</h3>
+    <input type="hidden" id="editIndex">
+    <div class="form-grid">
+      <div class="field">
+        <label for="name">اسم المكان</label>
+        <input id="name" placeholder="مثال: صيدلية الشفاء">
+      </div>
+      <div class="field">
+        <label for="type">النوع</label>
+        <select id="type">
+          <option value="">اختر النوع</option>
+          <option value="pharmacy">صيدلية</option>
+          <option value="hospital">مشفى</option>
+          <option value="dispensary">مستوصف</option>
+          <option value="clinic">عيادة</option>
+          <option value="lab">مخبر طبي</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="specialty">الاختصاص</label>
+        <input id="specialty" placeholder="للعيادات والمخابر فقط">
+      </div>
+      <div class="field">
+        <label for="phone">الهاتف</label>
+        <input id="phone" placeholder="مثال: 0999999999">
+      </div>
+      <div class="field">
+        <label for="whatsapp">واتساب (اختياري)</label>
+        <input id="whatsapp" placeholder="مثال: 963999999999">
+      </div>
+      <div class="field">
+        <label for="email">البريد الإلكتروني (اختياري)</label>
+        <input id="email" placeholder="example@email.com">
+      </div>
+      <div class="field">
+        <label for="governorate">المحافظة</label>
+        <select id="governorate"></select>
+      </div>
+      <div class="field">
+        <label for="city">المدينة</label>
+        <select id="city"></select>
+      </div>
+      <div class="field">
+        <label for="address">العنوان التفصيلي</label>
+        <input id="address" placeholder="اسم الشارع أو المعلم القريب">
+      </div>
+      <div class="field">
+        <label for="hours">ساعات العمل (اختياري)</label>
+        <input id="hours" placeholder="مثال: 9:00 - 22:00">
+      </div>
+      <div class="field">
+        <label for="services">الخدمات (اختياري)</label>
+        <input id="services" placeholder="مثال: قياس ضغط، تحاليل، إسعافات">
+      </div>
+      <div class="field">
+        <label for="notes">ملاحظات (اختياري)</label>
+        <input id="notes" placeholder="تفاصيل إضافية">
+      </div>
+      <div class="field">
+        <label for="image">رابط صورة (اختياري)</label>
+        <input id="image" placeholder="https://...">
+      </div>
+      <div id="imagePreview" class="image-preview">لا توجد صورة</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">تواريخ المناوبة</label>
+      <div class="inline-actions">
+        <input id="dutyDatesPicker" readonly>
+        <button id="clearDutyDates" class="btn ghost" type="button">مسح التواريخ</button>
+      </div>
+    </div>
+
+    <h4>الموقع على الخريطة</h4>
+    <div class="map-inline">
+      <input id="lat" readonly>
+      <input id="lng" readonly>
+    </div>
+    <div id="selectMap"></div>
+
+    <div class="modal-actions">
+      <button class="save" onclick="savePlace()">حفظ</button>
+      <button class="cancel" onclick="closeModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

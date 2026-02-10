@@ -1,0 +1,153 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>دليل المناوبة الصحية</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-mark"><i class="fa-solid fa-heart-pulse"></i></span>
+      <div>
+        <h1>سوريانا - طبي</h1>
+        <p>ابحث بسرعة عن الأماكن الطبية بالقرب منك.</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="themeToggle" class="btn ghost" type="button">
+        <i class="fa-solid fa-moon"></i>
+        المظهر
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="mainContent" class="container">
+  <section class="controls" aria-label="أدوات البحث">
+    <div class="field">
+      <label for="search">بحث سريع</label>
+      <input id="search" placeholder="ابحث بالاسم أو التخصص أو العنوان">
+    </div>
+
+    <div class="field">
+      <label for="governorate">المحافظة</label>
+      <select id="governorate">
+        <option value="all">كل المحافظات</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="city">المدينة</label>
+      <select id="city">
+        <option value="all">كل المدن</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="filter">نوع المكان</label>
+      <select id="filter">
+        <option value="all">الكل</option>
+        <option value="pharmacy">صيدليات</option>
+        <option value="hospital">مشافي</option>
+        <option value="dispensary">مستوصفات</option>
+        <option value="clinic">عيادات</option>
+        <option value="lab">مخابر طبية</option>
+        <option value="onDuty">مناوبة اليوم</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="sortBy">الترتيب</label>
+      <select id="sortBy">
+        <option value="default">افتراضي</option>
+        <option value="name">بالاسم</option>
+        <option value="city">بالمدينة</option>
+        <option value="onDuty">المناوبة أولاً</option>
+      </select>
+    </div>
+
+    <div class="field action-field">
+      <label>إجراءات سريعة</label>
+      <div class="action-group">
+        <button id="locateMe" class="btn ghost" type="button">
+          <i class="fa-solid fa-location-crosshairs"></i>
+          تحديد موقعي
+        </button>
+        <button id="toggleCompact" class="btn ghost" type="button">
+          <i class="fa-solid fa-grip"></i>
+          عرض مدمج
+        </button>
+        <button id="shareResults" class="btn ghost" type="button">
+          <i class="fa-solid fa-share-nodes"></i>
+          مشاركة
+        </button>
+        <button id="clearFilters" class="btn ghost" type="button">مسح الفلاتر</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="map-section">
+    <div id="map" aria-label="خريطة الأماكن"></div>
+  </section>
+
+  <section>
+    <div id="cards" class="cards"></div>
+    <div id="emptyState" class="empty-state" hidden>
+      <i class="fa-regular fa-circle-xmark"></i>
+      <p>لا توجد نتائج مطابقة للبحث الحالي.</p>
+    </div>
+    <div id="loadMoreWrap" class="load-more-wrap" hidden>
+      <button id="loadMore" class="btn ghost" type="button">
+        عرض المزيد
+      </button>
+    </div>
+  </section>
+
+  <section class="info-grid" aria-label="معلومات إضافية">
+    <article class="info-card">
+      <h3>عن المشروع</h3>
+      <p>منصة تجمع المناوبات الصحية في مكان واحد مع خريطة تفاعلية وفلاتر ذكية.</p>
+    </article>
+    <article class="info-card">
+      <h3>تواصل معنا</h3>
+      <p>للملاحظات أو الاقتراحات: support@health-duty.local</p>
+    </article>
+    <article class="info-card developer-card">
+      <h3>المطور</h3>
+      <div class="developer-info">
+        <img id="developerPhoto" src="https://scontent.fgzt3-2.fna.fbcdn.net/v/t39.30808-6/620081273_2722636984738771_9068259162125537370_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=vnxFb5sp-LwQ7kNvwH42yEA&_nc_oc=AdltwLWKFh7qRGeGq7sDJY_b8b12JJxbo7_wdyos90O-6EpnK36gW7Xnd7bJmu4ZSsk&_nc_zt=23&_nc_ht=scontent.fgzt3-2.fna&_nc_gid=6EMAjqsXWiz2c4KErgZfIA&oh=00_AfszMhzXlDnQsYCH-NuKuIIVfXImoEAUyphKgHzpiP00lA&oe=69903E13" alt="صورة المطور">
+        <div>
+          <p><strong>مصعب يوسف الأحمد</strong></p>
+          <p>الهاتف: +905396230519</p>
+        </div>
+      </div>
+      <!-- ضع رابط الصورة هنا داخل src للعنصر #developerPhoto -->
+    </article>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>تم تطويره لإبراز المناوبات الصحية بطريقة واضحة وحديثة.</p>
+</footer>
+
+<div id="statusBar" class="status-bar" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
