@@ -211,6 +211,15 @@ function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
 }
 
+function placeKey(place) {
+  return [
+    normalize(place.name),
+    normalize(place.type),
+    normalize(place.governorate),
+    normalize(place.city)
+  ].join("|");
+}
+
 function loadLocations() {
   try {
     const raw = localStorage.getItem(LOCATIONS_KEY);
@@ -238,7 +247,21 @@ async function loadPlacesFromDb() {
   if (!window.db) return null;
   try {
     const snapshot = await window.db.collection("places").orderBy("name").get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const seen = new Map();
+    const duplicates = [];
+    list.forEach(item => {
+      const key = placeKey(item);
+      if (seen.has(key)) {
+        duplicates.push(item);
+      } else {
+        seen.set(key, item);
+      }
+    });
+    if (duplicates.length) {
+      await Promise.all(duplicates.map(d => window.db.collection("places").doc(d.id).delete()));
+    }
+    return [...seen.values()];
   } catch {
     return null;
   }
@@ -702,6 +725,14 @@ function savePlace() {
 
   (async () => {
     try {
+      const key = placeKey(data);
+      if (editIndex.value === "") {
+        const duplicateIndex = places.findIndex(p => placeKey(p) === key);
+        if (duplicateIndex !== -1) {
+          editIndex.value = String(duplicateIndex);
+        }
+      }
+
       if (editIndex.value !== "") {
         const idx = Number(editIndex.value);
         const existing = places[idx];

@@ -178,6 +178,26 @@ function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
 }
 
+function placeKey(place) {
+  return [
+    normalize(place.name),
+    normalize(place.type),
+    normalize(place.governorate),
+    normalize(place.city)
+  ].join("|");
+}
+
+function dedupePlaces(list) {
+  const seen = new Map();
+  list.forEach(item => {
+    const key = placeKey(item);
+    if (!seen.has(key)) {
+      seen.set(key, item);
+    }
+  });
+  return [...seen.values()];
+}
+
 function isOnDuty(place) {
   return Array.isArray(place.schedule) && place.schedule.includes(todayISO);
 }
@@ -521,9 +541,10 @@ async function init() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_PLACES));
         rawPlaces = SEED_PLACES;
       }
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
-    allPlaces = enrichPlaces(rawPlaces);
+  }
+  rawPlaces = dedupePlaces(rawPlaces || []);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
+  allPlaces = enrichPlaces(rawPlaces);
 
     populateSelect(elements.governorate, unique(allPlaces.map(p => p.governorate)), "كل المحافظات");
     updateCityOptions();
