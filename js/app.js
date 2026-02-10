@@ -509,97 +509,100 @@ function locateUser(showToastMessage = true) {
 }
 
 async function init() {
-  let rawPlaces = await loadPlacesFromDb();
-  if (!rawPlaces || !rawPlaces.length) {
-    rawPlaces = await saveSeedIfNeeded();
-  }
-  if (!rawPlaces || !rawPlaces.length) {
-    rawPlaces = loadPlaces();
-    if (!rawPlaces.length) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_PLACES));
-      rawPlaces = SEED_PLACES;
+  let rawPlaces = [];
+  try {
+    rawPlaces = await loadPlacesFromDb();
+    if (!rawPlaces || !rawPlaces.length) {
+      rawPlaces = await saveSeedIfNeeded();
     }
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
-  allPlaces = enrichPlaces(rawPlaces);
+    if (!rawPlaces || !rawPlaces.length) {
+      rawPlaces = loadPlaces();
+      if (!rawPlaces.length) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_PLACES));
+        rawPlaces = SEED_PLACES;
+      }
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
+    allPlaces = enrichPlaces(rawPlaces);
 
-  populateSelect(elements.governorate, unique(allPlaces.map(p => p.governorate)), "كل المحافظات");
-  updateCityOptions();
+    populateSelect(elements.governorate, unique(allPlaces.map(p => p.governorate)), "كل المحافظات");
+    updateCityOptions();
 
-  const urlFilters = parseUrlFilters();
-  const savedFilters = loadFilters();
-  applyFilterState(urlFilters || savedFilters);
-  updateCompactToggle();
+    const urlFilters = parseUrlFilters();
+    const savedFilters = loadFilters();
+    applyFilterState(urlFilters || savedFilters);
+    updateCompactToggle();
 
-  const debouncedApply = debounce(applyFilters, 250);
-  [elements.search].filter(Boolean).forEach(el => el.addEventListener("input", debouncedApply));
-  [elements.filter, elements.governorate, elements.city, elements.sortBy]
-    .filter(Boolean)
-    .forEach(el => el.addEventListener("input", applyFilters));
+    const debouncedApply = debounce(applyFilters, 250);
+    [elements.search].filter(Boolean).forEach(el => el.addEventListener("input", debouncedApply));
+    [elements.filter, elements.governorate, elements.city, elements.sortBy]
+      .filter(Boolean)
+      .forEach(el => el.addEventListener("input", applyFilters));
 
-  if (elements.governorate) {
-    elements.governorate.addEventListener("change", () => {
-      updateCityOptions();
-      applyFilters();
-    });
-  }
+    if (elements.governorate) {
+      elements.governorate.addEventListener("change", () => {
+        updateCityOptions();
+        applyFilters();
+      });
+    }
 
-  if (elements.clearFilters) {
-    elements.clearFilters.addEventListener("click", clearFilters);
-  }
+    if (elements.clearFilters) {
+      elements.clearFilters.addEventListener("click", clearFilters);
+    }
 
-  if (elements.themeToggle) {
-    elements.themeToggle.addEventListener("click", () => {
-      const isDark = document.body.classList.contains("dark");
-      applyTheme(isDark ? "light" : "dark");
-    });
-  }
+    if (elements.themeToggle) {
+      elements.themeToggle.addEventListener("click", () => {
+        const isDark = document.body.classList.contains("dark");
+        applyTheme(isDark ? "light" : "dark");
+      });
+    }
 
-  if (elements.toggleCompact) {
-    elements.toggleCompact.addEventListener("click", () => {
-      compactMode = !compactMode;
-      updateCompactToggle();
-    });
-  }
+    if (elements.toggleCompact) {
+      elements.toggleCompact.addEventListener("click", () => {
+        compactMode = !compactMode;
+        updateCompactToggle();
+      });
+    }
 
-  if (elements.loadMore) {
-    elements.loadMore.addEventListener("click", () => {
-      currentPage += 1;
-      applyFilters();
-    });
-  }
+    if (elements.loadMore) {
+      elements.loadMore.addEventListener("click", () => {
+        currentPage += 1;
+        applyFilters();
+      });
+    }
 
-  window.addEventListener("online", () => updateStatusBar("أنت متصل بالإنترنت"));
-  window.addEventListener("offline", () => updateStatusBar("أنت غير متصل بالإنترنت"));
+    window.addEventListener("online", () => updateStatusBar("أنت متصل بالإنترنت"));
+    window.addEventListener("offline", () => updateStatusBar("أنت غير متصل بالإنترنت"));
 
-  if (elements.locateMe) {
-    elements.locateMe.addEventListener("click", () => locateUser(true));
-  }
+    if (elements.locateMe) {
+      elements.locateMe.addEventListener("click", () => locateUser(true));
+    }
 
-  if (elements.shareResults) {
-    elements.shareResults.addEventListener("click", async () => {
-      const url = buildShareUrl();
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: document.title, url });
-          return;
-        } catch {
-          // fallback to clipboard
+    if (elements.shareResults) {
+      elements.shareResults.addEventListener("click", async () => {
+        const url = buildShareUrl();
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: document.title, url });
+            return;
+          } catch {
+            // fallback to clipboard
+          }
         }
-      }
-      try {
-        await navigator.clipboard.writeText(url);
-        showToast("تم نسخ رابط النتائج");
-      } catch {
-        showToast("تعذر نسخ الرابط");
-      }
-    });
+        try {
+          await navigator.clipboard.writeText(url);
+          showToast("تم نسخ رابط النتائج");
+        } catch {
+          showToast("تعذر نسخ الرابط");
+        }
+      });
+    }
+  } finally {
+    initTheme();
+    initMap();
+    locateUser(false);
+    applyFilters();
   }
-
-  initTheme();
-  initMap();
-  locateUser(false);
-  applyFilters();
 }
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -701,21 +701,35 @@ function savePlace() {
   };
 
   (async () => {
-    if (editIndex.value !== "") {
-      const idx = Number(editIndex.value);
-      const existing = places[idx];
-      const id = existing?.id || null;
-      const savedId = await savePlaceToDb(data, id);
-      places[idx] = { ...data, id: savedId || id };
-      logAction(`تم تعديل ${data.name}`);
-    } else {
-      const savedId = await savePlaceToDb(data, null);
-      places.push({ ...data, id: savedId });
-      logAction(`تمت إضافة ${data.name}`);
+    try {
+      if (editIndex.value !== "") {
+        const idx = Number(editIndex.value);
+        const existing = places[idx];
+        const id = existing?.id || null;
+        const savedId = await savePlaceToDb(data, id);
+        places[idx] = { ...data, id: savedId || id };
+        logAction(`تم تعديل ${data.name}`);
+      } else {
+        const savedId = await savePlaceToDb(data, null);
+        places.push({ ...data, id: savedId });
+        logAction(`تمت إضافة ${data.name}`);
+      }
+      savePlaces();
+      closeModal();
+      renderAdmin();
+    } catch {
+      if (editIndex.value !== "") {
+        places[editIndex.value] = data;
+        logAction(`تم تعديل ${data.name}`);
+      } else {
+        places.push(data);
+        logAction(`تمت إضافة ${data.name}`);
+      }
+      savePlaces();
+      closeModal();
+      renderAdmin();
+      alert("تعذر الحفظ على الإنترنت، تم الحفظ محلياً فقط");
     }
-    savePlaces();
-    closeModal();
-    renderAdmin();
   })();
 }
 
