@@ -381,7 +381,10 @@ function logAction(action) {
 }
 
 function isOnDuty(place) {
-  return Array.isArray(place.schedule) && place.schedule.includes(todayISO);
+  if (!Array.isArray(place.schedule)) return false;
+  return place.schedule
+    .map(d => (d || "").toString().split("T")[0])
+    .includes(todayISO);
 }
 
 function typeLabel(type) {
@@ -720,6 +723,7 @@ function savePlace() {
   }
   if (!validateForm()) return;
 
+  const normalizedSchedule = dutyDates.map(d => (d || "").toString().split("T")[0]);
   const data = {
     name: name.value.trim(),
     type: type.value,
@@ -736,7 +740,7 @@ function savePlace() {
     image: image.value.trim(),
     lat: +lat.value,
     lng: +lng.value,
-    schedule: dutyDates
+    schedule: normalizedSchedule
   };
 
   (async () => {

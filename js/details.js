@@ -32,7 +32,10 @@ async function loadPlacesFromDb() {
 }
 
 function isOnDuty(place) {
-  return Array.isArray(place.schedule) && place.schedule.includes(todayISO);
+  if (!Array.isArray(place.schedule)) return false;
+  return place.schedule
+    .map(d => (d || "").toString().split("T")[0])
+    .includes(todayISO);
 }
 
 function typeIcon(type) {
