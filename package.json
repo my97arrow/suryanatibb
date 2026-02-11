@@ -1,0 +1,31 @@
+{
+  "name": "health-duty-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "copy:web": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-web.ps1",
+    "cap:sync": "npm run copy:web && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:build:debug": "cd android && gradlew.bat assembleDebug"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/my97arrow/suryanatibb.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/my97arrow/suryanatibb/issues"
+  },
+  "homepage": "https://github.com/my97arrow/suryanatibb#readme",
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.2"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.0.2",
+    "@capacitor/android": "^8.0.2"
+  }
+}
