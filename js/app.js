@@ -558,24 +558,49 @@ function debounce(fn, wait = 250) {
   };
 }
 
-function locateUser(showToastMessage = true) {
+function applyLocatedPosition(lat, lng, showToastMessage = true) {
+  userLocation = { lat, lng };
+  if (map) map.setView([userLocation.lat, userLocation.lng], 13);
+  if (elements.sortBy && ![...elements.sortBy.options].some(o => o.value === "distance")) {
+    const option = document.createElement("option");
+    option.value = "distance";
+    option.textContent = "الأقرب لموقعي";
+    elements.sortBy.appendChild(option);
+  }
+  if (elements.sortBy) elements.sortBy.value = "distance";
+  if (showToastMessage) showToast("تم تحديد موقعك");
+  applyFilters();
+}
+
+async function locateUser(showToastMessage = true) {
+  const cap = window.Capacitor;
+  const isNative = !!(cap && typeof cap.isNativePlatform === "function" && cap.isNativePlatform());
+  const geoPlugin = cap?.Plugins?.Geolocation;
+
+  if (isNative && geoPlugin) {
+    try {
+      const perms = await geoPlugin.checkPermissions();
+      if (perms.location !== "granted") {
+        await geoPlugin.requestPermissions();
+      }
+      const pos = await geoPlugin.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 15000
+      });
+      applyLocatedPosition(pos.coords.latitude, pos.coords.longitude, showToastMessage);
+      return;
+    } catch {
+      // fall back to browser geolocation below
+    }
+  }
+
   if (!navigator.geolocation) {
     if (showToastMessage) showToast("ميزة تحديد الموقع غير مدعومة");
     return;
   }
   navigator.geolocation.getCurrentPosition(
     pos => {
-      userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      if (map) map.setView([userLocation.lat, userLocation.lng], 13);
-      if (elements.sortBy && ![...elements.sortBy.options].some(o => o.value === "distance")) {
-        const option = document.createElement("option");
-        option.value = "distance";
-        option.textContent = "الأقرب لموقعي";
-        elements.sortBy.appendChild(option);
-      }
-      if (elements.sortBy) elements.sortBy.value = "distance";
-      if (showToastMessage) showToast("تم تحديد موقعك");
-      applyFilters();
+      applyLocatedPosition(pos.coords.latitude, pos.coords.longitude, showToastMessage);
     },
     () => {
       if (showToastMessage) showToast("لم نتمكن من تحديد الموقع");
