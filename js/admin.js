@@ -732,18 +732,7 @@ function saveCroppedImage() {
     imageSmoothingEnabled: true,
     imageSmoothingQuality: "high"
   });
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.clearRect(0, 0, size, size);
-  ctx.beginPath();
-  ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.clip();
-  ctx.drawImage(square, 0, 0, size, size);
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.2);
+  const dataUrl = square.toDataURL("image/jpeg", 0.2);
   image.value = dataUrl;
   updateImagePreview(image.value);
   closeCropModal();
