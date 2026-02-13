@@ -7,6 +7,7 @@ const todayISO = localISODate();
 
 const detailRoot = document.getElementById("detail");
 const detailEmpty = document.getElementById("detailEmpty");
+const THEME_KEY = "healthDutyTheme";
 
 function loadPlaces() {
   try {
@@ -227,7 +228,19 @@ function renderDetail(place) {
   }
 }
 
+function applyTheme(theme) {
+  document.body.classList.toggle("dark", theme === "dark");
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const systemPrefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const theme = saved || (systemPrefersDark ? "dark" : "light");
+  applyTheme(theme);
+}
+
 (async function init() {
+  initTheme();
   const params = new URLSearchParams(window.location.search);
   const rawId = params.get("id");
   const id = rawId ? String(rawId) : "";
