@@ -743,7 +743,7 @@ function saveCroppedImage() {
   ctx.closePath();
   ctx.clip();
   ctx.drawImage(square, 0, 0, size, size);
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.2);
   image.value = dataUrl;
   updateImagePreview(image.value);
   closeCropModal();
