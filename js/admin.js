@@ -133,7 +133,8 @@ function generateSamplePlaces(count = 50) {
       lat: loc.lat + (i % 5) * 0.01,
       lng: loc.lng + (i % 5) * 0.01,
       schedule: type === "pharmacy" && i % 3 === 0 ? [todayISO] : [],
-      workdays: i % 4 === 0 ? WEEK_DAYS : ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
+      workdays: i % 4 === 0 ? WEEK_DAYS : ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"],
+      seedSample: true
     });
   }
   return list;
@@ -167,6 +168,28 @@ async function appendSamplePlaces() {
   }
 
   localStorage.setItem("healthDutySamplesSeeded", "true");
+}
+
+async function purgeSamplePlaces() {
+  const samples = generateSamplePlaces(50);
+  const sampleKeys = new Set(samples.map(placeKey));
+  const toRemove = places.filter(p => p.seedSample || sampleKeys.has(placeKey(p)));
+  if (!toRemove.length) return;
+
+  if (window.supabaseClient) {
+    try {
+      await Promise.all(
+        toRemove
+          .filter(p => p.id)
+          .map(p => window.supabaseClient.from("places").delete().eq("id", p.id))
+      );
+    } catch {
+      // ignore remote deletion errors
+    }
+  }
+
+  places = places.filter(p => !p.seedSample && !sampleKeys.has(placeKey(p)));
+  savePlaces();
 }
 
 let map = null;
@@ -436,10 +459,15 @@ function ensureSeedPlaces() {
   if (!places.length) {
     (async () => {
       if (window.supabaseClient) {
-        await window.supabaseClient.from("places").insert(SEED_PLACES);
+        try {
+          await window.supabaseClient.from("places").insert(SEED_PLACES);
+        } catch {
+          // ignore
+        }
       }
       places = SEED_PLACES;
       savePlaces();
+      localStorage.setItem("healthDutySamplesSeeded", "true");
     })();
   }
 }
@@ -1559,10 +1587,7 @@ async function bootApp() {
   locations = loadLocations();
   places = (await loadPlacesFromDb()) || loadPlaces();
   ensureSeedPlaces();
-  const seeded = localStorage.getItem("healthDutySamplesSeeded") === "true";
-  if (!seeded) {
-    await appendSamplePlaces();
-  }
+  await purgeSamplePlaces();
   logs = loadLogs();
   adminPage = 1;
   logPage = 1;
