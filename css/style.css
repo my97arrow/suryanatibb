@@ -1464,6 +1464,10 @@ body.dark #pharmacyTable td {
   font-size: 12px;
 }
 
+.login-card .btn {
+  margin-top: 12px;
+}
+
 .user-badge {
   padding: 8px 12px;
   border-radius: 999px;
