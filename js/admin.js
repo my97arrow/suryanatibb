@@ -899,7 +899,7 @@ function saveCroppedImage() {
     imageSmoothingEnabled: true,
     imageSmoothingQuality: "high"
   });
-  const dataUrl = square.toDataURL("image/jpeg", 0.2);
+  const dataUrl = square.toDataURL("image/jpeg", 1);
   image.value = dataUrl;
   updateImagePreview(image.value);
   closeCropModal();
