@@ -560,6 +560,8 @@ select:focus {
   text-decoration: none;
   color: var(--ink);
   transition: 0.2s ease;
+  border: none;
+  cursor: pointer;
 }
 
 .icon-btn:hover {
