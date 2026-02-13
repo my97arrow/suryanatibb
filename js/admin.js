@@ -1633,6 +1633,23 @@ if (removeCityBtn) removeCityBtn.addEventListener("click", removeCity);
     renderAdmin();
   }));
 
+function updateMarkerFromInputs() {
+  if (!map) return;
+  const latVal = parseFloat(lat?.value);
+  const lngVal = parseFloat(lng?.value);
+  if (Number.isNaN(latVal) || Number.isNaN(lngVal)) return;
+  const point = [latVal, lngVal];
+  if (marker) {
+    marker.setLatLng(point);
+  } else {
+    marker = L.marker(point).addTo(map);
+  }
+  map.setView(point, 12);
+}
+
+if (lat) lat.addEventListener("input", updateMarkerFromInputs);
+if (lng) lng.addEventListener("input", updateMarkerFromInputs);
+
 ensureDefaultUser();
 locations = loadLocations();
 const session = loadSession();
