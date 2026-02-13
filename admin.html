@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
 </head>
 <body class="admin">
 
@@ -284,6 +285,10 @@
         <label for="image">رابط صورة (اختياري)</label>
         <input id="image" placeholder="https://...">
       </div>
+      <div class="field">
+        <label for="imageFile">صورة من الجهاز (اختياري)</label>
+        <input id="imageFile" type="file" accept="image/*" capture="environment">
+      </div>
       <div id="imagePreview" class="image-preview">لا توجد صورة</div>
     </div>
 
@@ -309,8 +314,24 @@
   </div>
 </div>
 
+<div class="modal" id="cropModal" aria-hidden="true">
+  <div class="modal-box modal-wide crop-box">
+    <h3>قص وتدوير الصورة</h3>
+    <div class="crop-wrap">
+      <img id="cropImage" alt="صورة القص">
+    </div>
+    <div class="crop-actions">
+      <button id="rotateLeft" class="btn ghost" type="button">تدوير يسار</button>
+      <button id="rotateRight" class="btn ghost" type="button">تدوير يمين</button>
+      <button id="cropSave" class="btn primary" type="button">حفظ</button>
+      <button id="cropCancel" class="btn ghost" type="button">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/dist/umd/supabase.min.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/admin.js"></script>

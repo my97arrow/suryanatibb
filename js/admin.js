@@ -170,7 +170,16 @@ const hours = document.getElementById("hours");
 const services = document.getElementById("services");
 const notes = document.getElementById("notes");
 const image = document.getElementById("image");
+const imageFile = document.getElementById("imageFile");
 const imagePreview = document.getElementById("imagePreview");
+const cropModal = document.getElementById("cropModal");
+const cropImage = document.getElementById("cropImage");
+const rotateLeft = document.getElementById("rotateLeft");
+const rotateRight = document.getElementById("rotateRight");
+const cropSave = document.getElementById("cropSave");
+const cropCancel = document.getElementById("cropCancel");
+
+let cropper = null;
 const lat = document.getElementById("lat");
 const lng = document.getElementById("lng");
 const editIndex = document.getElementById("editIndex");
@@ -674,6 +683,70 @@ function updateImagePreview(url) {
     imagePreview.style.backgroundImage = "none";
     imagePreview.textContent = "لا توجد صورة";
   }
+}
+
+function handleImageFile() {
+  if (!imageFile || !image) return;
+  const file = imageFile.files && imageFile.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (!cropModal || !cropImage) return;
+    cropModal.classList.add("active");
+    cropModal.setAttribute("aria-hidden", "false");
+    cropImage.src = reader.result || "";
+    cropImage.onload = () => {
+      if (cropper) cropper.destroy();
+      cropper = new Cropper(cropImage, {
+        aspectRatio: 1,
+        viewMode: 1,
+        autoCropArea: 1,
+        background: false,
+        movable: true,
+        zoomable: true,
+        rotatable: true,
+        scalable: false
+      });
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
+function closeCropModal() {
+  if (!cropModal) return;
+  cropModal.classList.remove("active");
+  cropModal.setAttribute("aria-hidden", "true");
+  if (cropper) {
+    cropper.destroy();
+    cropper = null;
+  }
+  if (imageFile) imageFile.value = "";
+}
+
+function saveCroppedImage() {
+  if (!cropper) return;
+  const size = 256;
+  const square = cropper.getCroppedCanvas({
+    width: size,
+    height: size,
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: "high"
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.clearRect(0, 0, size, size);
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(square, 0, 0, size, size);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+  image.value = dataUrl;
+  updateImagePreview(image.value);
+  closeCropModal();
 }
 
 if (type) type.onchange = toggleSpecialty;
@@ -1352,6 +1425,11 @@ if (governorate) governorate.addEventListener("change", () => {
   applyUserScopeToForm();
 });
 if (image) image.addEventListener("input", () => updateImagePreview(image.value.trim()));
+if (imageFile) imageFile.addEventListener("change", handleImageFile);
+if (rotateLeft) rotateLeft.addEventListener("click", () => cropper?.rotate(-90));
+if (rotateRight) rotateRight.addEventListener("click", () => cropper?.rotate(90));
+if (cropSave) cropSave.addEventListener("click", saveCroppedImage);
+if (cropCancel) cropCancel.addEventListener("click", closeCropModal);
 if (importFile) importFile.addEventListener("change", importData);
 if (loginBtn) loginBtn.addEventListener("click", login);
 if (logoutBtn) logoutBtn.addEventListener("click", logout);
