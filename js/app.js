@@ -502,11 +502,37 @@ function renderCards(list) {
           <a class="icon-btn" href="details.html?id=${place.id || place._index}">
             <i class="fa-solid fa-up-right-from-square"></i>
           </a>
+          <button class="icon-btn share-btn" type="button" aria-label="مشاركة">
+            <i class="fa-solid fa-share-nodes"></i>
+          </button>
         </div>
       </div>
     `;
 
     elements.cards.appendChild(card);
+
+    const shareBtn = card.querySelector(".share-btn");
+    if (shareBtn) {
+      shareBtn.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        const url = new URL("details.html", window.location.origin + window.location.pathname);
+        url.searchParams.set("id", place.id || place._index);
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: place.name, url: url.toString() });
+            return;
+          } catch {
+            // fallback to clipboard
+          }
+        }
+        try {
+          await navigator.clipboard.writeText(url.toString());
+          showToast("تم نسخ رابط المشاركة");
+        } catch {
+          showToast("تعذر نسخ الرابط");
+        }
+      });
+    }
 
     card.addEventListener("click", event => {
       if (event.target.closest(".icon-btn")) return;

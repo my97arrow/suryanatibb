@@ -137,6 +137,9 @@ function renderDetail(place) {
           <a class="icon-btn" href="https://www.google.com/maps?q=${place.lat},${place.lng}" target="_blank" rel="noreferrer">
             <i class="fa-solid fa-map-location-dot"></i>
           </a>
+          <button class="icon-btn share-btn" type="button" aria-label="مشاركة">
+            <i class="fa-solid fa-share-nodes"></i>
+          </button>
         </div>
       </div>
       <div class="detail-schedule">
@@ -171,6 +174,27 @@ function renderDetail(place) {
     const map = L.map("detailMap").setView([place.lat, place.lng], 15);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
     L.marker([place.lat, place.lng]).addTo(map);
+  }
+
+  const shareBtn = detailRoot.querySelector(".share-btn");
+  if (shareBtn) {
+    shareBtn.addEventListener("click", async () => {
+      const url = window.location.href;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: place.name, url });
+          return;
+        } catch {
+          // fallback to clipboard
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        alert("تم نسخ رابط المشاركة");
+      } catch {
+        alert("تعذر نسخ الرابط");
+      }
+    });
   }
 
   const modal = document.getElementById("imageModal");
