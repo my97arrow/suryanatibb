@@ -730,6 +730,8 @@ select:focus {
 
 .place-icon.square img {
   border-radius: 18px;
+  object-fit: contain;
+  background: #fff;
 }
 
 .detail-header .place-icon {
