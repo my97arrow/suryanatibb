@@ -1600,6 +1600,16 @@ if (cropSave) cropSave.addEventListener("click", saveCroppedImage);
 if (cropCancel) cropCancel.addEventListener("click", closeCropModal);
 if (importFile) importFile.addEventListener("change", importData);
 if (loginBtn) loginBtn.addEventListener("click", login);
+if (loginUser) {
+  loginUser.addEventListener("keydown", event => {
+    if (event.key === "Enter") login();
+  });
+}
+if (loginPass) {
+  loginPass.addEventListener("keydown", event => {
+    if (event.key === "Enter") login();
+  });
+}
 if (logoutBtn) logoutBtn.addEventListener("click", logout);
 if (addUserBtn) addUserBtn.addEventListener("click", addUser);
 if (userRole) userRole.addEventListener("change", updateUserScopeForm);
