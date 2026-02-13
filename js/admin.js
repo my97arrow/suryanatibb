@@ -156,14 +156,17 @@ async function appendSamplePlaces() {
       if (error) throw error;
       places = [...places, ...(data || toAdd)];
       savePlaces();
-      return;
     } catch {
       // fallback to local
+      places = [...places, ...toAdd];
+      savePlaces();
     }
+  } else {
+    places = [...places, ...toAdd];
+    savePlaces();
   }
 
-  places = [...places, ...toAdd];
-  savePlaces();
+  localStorage.setItem("healthDutySamplesSeeded", "true");
 }
 
 let map = null;
@@ -1556,7 +1559,10 @@ async function bootApp() {
   locations = loadLocations();
   places = (await loadPlacesFromDb()) || loadPlaces();
   ensureSeedPlaces();
-  await appendSamplePlaces();
+  const seeded = localStorage.getItem("healthDutySamplesSeeded") === "true";
+  if (!seeded) {
+    await appendSamplePlaces();
+  }
   logs = loadLogs();
   adminPage = 1;
   logPage = 1;
