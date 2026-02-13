@@ -101,11 +101,15 @@ a {
   border-radius: 18px;
   display: grid;
   place-items: center;
-  background: transparent;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
   color: #fff;
   font-size: 26px;
   box-shadow: var(--shadow);
   overflow: hidden;
+}
+
+.brand-mark.logo {
+  background: transparent;
 }
 
 .brand-mark img {

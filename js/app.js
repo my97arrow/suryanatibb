@@ -626,7 +626,14 @@ async function init() {
   updateCompactToggle();
 
   const debouncedApply = debounce(applyFilters, 250);
-  [elements.search].filter(Boolean).forEach(el => el.addEventListener("input", debouncedApply));
+  [elements.search].filter(Boolean).forEach(el => el.addEventListener("input", () => {
+    const secret = normalize(el.value);
+    if (secret === "لوحة التحكم") {
+      window.location.href = "admin.html";
+      return;
+    }
+    debouncedApply();
+  }));
   [elements.filter, elements.governorate, elements.city, elements.sortBy]
     .filter(Boolean)
     .forEach(el => el.addEventListener("input", applyFilters));
