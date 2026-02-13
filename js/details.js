@@ -72,7 +72,7 @@ function renderDetail(place) {
   const schedule = normalizeSchedule(place.schedule);
   const showDuty = place.type === "pharmacy";
   const media = place.image
-    ? `<div class="place-icon ${place.type}">
+    ? `<div class="place-icon square ${place.type}">
         <img src="${place.image}" alt="${place.name}">
       </div>`
     : `<div class="place-icon ${place.type}">

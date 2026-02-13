@@ -724,6 +724,14 @@ select:focus {
   display: block;
 }
 
+.place-icon.square {
+  border-radius: 18px;
+}
+
+.place-icon.square img {
+  border-radius: 18px;
+}
+
 .detail-header .place-icon {
   width: 64px;
   height: 64px;
