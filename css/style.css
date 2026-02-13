@@ -367,6 +367,17 @@ select:focus {
   height: 64px;
 }
 
+.compact .card-actions {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.compact .icon-btn {
+  width: 34px;
+  height: 34px;
+  font-size: 12px;
+}
+
 .card {
   background: var(--card);
   border-radius: 18px;
