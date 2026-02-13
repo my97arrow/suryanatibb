@@ -270,8 +270,26 @@
         <input id="address" placeholder="اسم الشارع أو المعلم القريب">
       </div>
       <div class="field">
-        <label for="hours">ساعات العمل (اختياري)</label>
-        <input id="hours" placeholder="مثال: 9:00 - 22:00">
+        <label>ساعات العمل (اختياري)</label>
+        <div class="time-range">
+          <input id="hoursStart" type="time">
+          <span>—</span>
+          <input id="hoursEnd" type="time">
+        </div>
+        <input id="hours" type="hidden">
+      </div>
+      <div class="field span-2">
+        <label>أيام العمل</label>
+        <div class="workdays-grid">
+          <label><input id="workdaysAll" type="checkbox" value="all"> كل الأيام</label>
+          <label><input type="checkbox" name="workdays" value="الأحد"> الأحد</label>
+          <label><input type="checkbox" name="workdays" value="الاثنين"> الاثنين</label>
+          <label><input type="checkbox" name="workdays" value="الثلاثاء"> الثلاثاء</label>
+          <label><input type="checkbox" name="workdays" value="الأربعاء"> الأربعاء</label>
+          <label><input type="checkbox" name="workdays" value="الخميس"> الخميس</label>
+          <label><input type="checkbox" name="workdays" value="الجمعة"> الجمعة</label>
+          <label><input type="checkbox" name="workdays" value="السبت"> السبت</label>
+        </div>
       </div>
       <div class="field">
         <label for="services">الخدمات (اختياري)</label>

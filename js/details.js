@@ -67,14 +67,34 @@ function typeIcon(type) {
   return "fa-prescription-bottle-medical";
 }
 
+function formatDateLabel(dateStr) {
+  if (!dateStr) return "";
+  const [y, m, d] = dateStr.split("-");
+  const safeDate = new Date(`${dateStr}T00:00:00`);
+  const dayName = safeDate.toLocaleDateString("ar", { weekday: "long" });
+  const formatted = [d, m, y].filter(Boolean).join("-");
+  return `${dayName} - ${formatted}`;
+}
+
+function normalizeWorkdays(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return value
+    .toString()
+    .split(/[|,]/)
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
 function renderDetail(place) {
   const duty = isOnDuty(place);
   const schedule = normalizeSchedule(place.schedule);
   const showDuty = place.type === "pharmacy";
+  const workdays = normalizeWorkdays(place.workdays);
   const media = place.image
-    ? `<div class="place-icon square ${place.type}">
+    ? `<button class="place-icon square detail-media ${place.type}" type="button" data-image="${place.image}">
         <img src="${place.image}" alt="${place.name}">
-      </div>`
+      </button>`
     : `<div class="place-icon ${place.type}">
         <i class="fa-solid ${typeIcon(place.type)}"></i>
       </div>`;
@@ -106,6 +126,7 @@ function renderDetail(place) {
         ${place.whatsapp ? `<p><i class="fa-brands fa-whatsapp"></i> ${place.whatsapp}</p>` : ""}
         ${place.email ? `<p><i class="fa-solid fa-envelope"></i> ${place.email}</p>` : ""}
         ${place.hours ? `<p><i class="fa-regular fa-clock"></i> ${place.hours}</p>` : ""}
+        ${workdays.length ? `<p><i class="fa-regular fa-calendar"></i> ${workdays.join("، ")}</p>` : ""}
         <div class="card-actions">
           <a class="icon-btn ${place.phone ? "" : "disabled"}" href="${place.phone ? `tel:${place.phone}` : "#"}">
             <i class="fa-solid fa-phone"></i>
@@ -124,7 +145,7 @@ function renderDetail(place) {
           <div class="chip-grid">
             ${schedule.map(d => {
               const status = d < todayISO ? "past" : (d === todayISO ? "on" : "upcoming");
-              return `<span class="chip ${status}">${d}</span>`;
+              return `<span class="chip ${status}">${formatDateLabel(d)}</span>`;
             }).join("")}
           </div>
         ` : "<p class=\"muted\">لم يتم تحديد تواريخ المناوبة بعد.</p>"}
@@ -150,6 +171,35 @@ function renderDetail(place) {
     const map = L.map("detailMap").setView([place.lat, place.lng], 15);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
     L.marker([place.lat, place.lng]).addTo(map);
+  }
+
+  const modal = document.getElementById("imageModal");
+  const modalImg = document.getElementById("imageModalImg");
+  const modalClose = modal?.querySelector(".image-modal-close");
+  const modalBackdrop = modal?.querySelector(".image-modal-backdrop");
+  const mediaBtn = detailRoot.querySelector(".detail-media");
+
+  if (modal && modalImg && mediaBtn) {
+    const openModal = () => {
+      modalImg.src = mediaBtn.dataset.image || "";
+      modal.hidden = false;
+      modal.classList.add("active");
+      document.body.style.overflow = "hidden";
+    };
+    const closeModal = () => {
+      modal.hidden = true;
+      modal.classList.remove("active");
+      modalImg.src = "";
+      document.body.style.overflow = "";
+    };
+
+    mediaBtn.addEventListener("click", openModal);
+    modalClose?.addEventListener("click", closeModal);
+    modalBackdrop?.addEventListener("click", closeModal);
+    document.addEventListener("keydown", event => {
+      if (!modal.classList.contains("active")) return;
+      if (event.key === "Escape") closeModal();
+    });
   }
 }
 

@@ -5,6 +5,16 @@ function localISODate(d = new Date()) {
 }
 const todayISO = localISODate();
 
+const WEEK_DAYS = [
+  "الأحد",
+  "الاثنين",
+  "الثلاثاء",
+  "الأربعاء",
+  "الخميس",
+  "الجمعة",
+  "السبت"
+];
+
 const elements = {
   search: document.getElementById("search"),
   filter: document.getElementById("filter"),
@@ -32,12 +42,13 @@ let markersById = {};
 let userLocation = null;
 let compactMode = false;
 let currentPage = 1;
-const pageSize = 12;
+const pageSize = 20;
+let filteredPlaces = [];
 const THEME_KEY = "healthDutyTheme";
 
 const FILTERS_KEY = "healthDutyFilters";
 
-const SEED_PLACES = [
+const BASE_SEED_PLACES = [
   {
     name: "صيدلية الشفاء",
     type: "pharmacy",
@@ -54,7 +65,8 @@ const SEED_PLACES = [
     image: "",
     lat: 33.5138,
     lng: 36.2765,
-    schedule: [todayISO]
+    schedule: [todayISO],
+    workdays: WEEK_DAYS
   },
   {
     name: "عيادة الدكتور أمجد",
@@ -72,7 +84,8 @@ const SEED_PLACES = [
     image: "",
     lat: 36.2021,
     lng: 37.1343,
-    schedule: []
+    schedule: [],
+    workdays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
   },
   {
     name: "مخبر الأمل الطبي",
@@ -90,9 +103,70 @@ const SEED_PLACES = [
     image: "",
     lat: 34.7309,
     lng: 36.7094,
-    schedule: []
+    schedule: [],
+    workdays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
   }
 ];
+
+function generateSamplePlaces(count = 50) {
+  const types = ["pharmacy", "clinic", "hospital", "dispensary", "lab"];
+  const typeNames = {
+    pharmacy: "صيدلية",
+    clinic: "عيادة",
+    hospital: "مشفى",
+    dispensary: "مستوصف",
+    lab: "مخبر"
+  };
+  const specialties = {
+    clinic: ["قلبية", "عينية", "جلدية", "أسنان", "عظمية"],
+    lab: ["تحاليل", "هرمونات", "فيروسات"],
+    hospital: ["عام", "نسائية", "أطفال"],
+    dispensary: ["عام"],
+    pharmacy: [""]
+  };
+  const locationsList = [
+    { gov: "دمشق", city: "دمشق", lat: 33.5138, lng: 36.2765 },
+    { gov: "حلب", city: "حلب", lat: 36.2021, lng: 37.1343 },
+    { gov: "حمص", city: "حمص", lat: 34.7309, lng: 36.7094 },
+    { gov: "حماة", city: "حماة", lat: 35.1318, lng: 36.7578 },
+    { gov: "اللاذقية", city: "اللاذقية", lat: 35.5306, lng: 35.7901 },
+    { gov: "طرطوس", city: "طرطوس", lat: 34.8896, lng: 35.8866 },
+    { gov: "إدلب", city: "إدلب", lat: 35.93, lng: 36.63 },
+    { gov: "دير الزور", city: "دير الزور", lat: 35.3336, lng: 40.15 }
+  ];
+
+  const list = [];
+  for (let i = 0; i < count; i += 1) {
+    const type = types[i % types.length];
+    const loc = locationsList[i % locationsList.length];
+    const specList = specialties[type] || [""];
+    const specialty = specList[i % specList.length] || "";
+    const suffix = i + 1;
+    const name = `${typeNames[type]} النبض ${suffix}`;
+    list.push({
+      name,
+      type,
+      specialty,
+      phone: `09${(1000000 + i).toString().slice(0, 7)}`,
+      whatsapp: "",
+      email: "",
+      governorate: loc.gov,
+      city: loc.city,
+      address: `شارع رئيسي - بناء رقم ${suffix}`,
+      hours: "08:00 - 20:00",
+      services: "خدمة استقبال واستشارات أولية",
+      notes: "",
+      image: "",
+      lat: loc.lat + (i % 5) * 0.01,
+      lng: loc.lng + (i % 5) * 0.01,
+      schedule: type === "pharmacy" && i % 3 === 0 ? [todayISO] : [],
+      workdays: i % 4 === 0 ? WEEK_DAYS : ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
+    });
+  }
+  return list;
+}
+
+const SEED_PLACES = [...BASE_SEED_PLACES, ...generateSamplePlaces(50)];
 
 function loadPlaces() {
   try {
@@ -534,8 +608,9 @@ function applyFilters() {
   }
 
   currentPage = 1;
-  renderCards(filtered);
-  renderMarkers(filtered);
+  filteredPlaces = filtered;
+  renderCards(filteredPlaces);
+  renderMarkers(filteredPlaces);
   saveFilters();
 }
 
@@ -672,7 +747,7 @@ async function init() {
   if (elements.loadMore) {
     elements.loadMore.addEventListener("click", () => {
       currentPage += 1;
-      applyFilters();
+      renderCards(filteredPlaces);
     });
   }
 

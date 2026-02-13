@@ -593,6 +593,25 @@ select:focus {
   margin-top: 18px;
 }
 
+.load-more-wrap .btn {
+  padding: 10px 20px;
+  min-width: 160px;
+  font-weight: 700;
+  border-radius: 16px;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.load-more-wrap .btn:hover {
+  background: rgba(14, 165, 233, 0.2);
+}
+
+.section-divider {
+  height: 1px;
+  margin: 26px 0 10px;
+  background: linear-gradient(90deg, transparent, rgba(15, 23, 42, 0.2), transparent);
+}
+
 .site-footer {
   text-align: center;
   padding: 20px;
@@ -734,6 +753,70 @@ select:focus {
   background: #fff;
 }
 
+.place-icon.detail-media {
+  border: none;
+  padding: 0;
+  cursor: zoom-in;
+}
+
+.image-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.image-modal.active {
+  display: flex;
+}
+
+.image-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.image-modal-content {
+  position: relative;
+  z-index: 1;
+  width: min(720px, 92vw);
+  max-height: 85vh;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.image-modal-content img {
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.image-modal-close {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
 .detail-header .place-icon {
   width: 64px;
   height: 64px;
@@ -823,6 +906,35 @@ select:focus {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.field.span-2 {
+  grid-column: 1 / -1;
+}
+
+.time-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-range input {
+  flex: 1;
+}
+
+.workdays-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 8px 0 0;
+}
+
+.workdays-grid label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
 }
 
 .inline-actions {
@@ -1146,6 +1258,10 @@ body.dark .icon-btn:hover {
   color: #fff;
 }
 
+body.dark .section-divider {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -1233,16 +1349,25 @@ body.dark #pharmacyTable td {
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
-  margin-top: 30px;
+  margin-top: 18px;
 }
 
 .info-card {
-  padding: 18px;
+  padding: 14px;
   border-radius: var(--radius);
   background: var(--card);
   box-shadow: var(--shadow);
+}
+
+.info-card h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.info-card p {
+  font-size: 13px;
 }
 
 .social-buttons {
@@ -1261,8 +1386,8 @@ body.dark #pharmacyTable td {
 }
 
 .developer-info img {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   object-fit: cover;
   box-shadow: var(--shadow);

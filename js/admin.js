@@ -11,7 +11,17 @@ function localISODate(d = new Date()) {
 }
 const todayISO = localISODate();
 
-const SEED_PLACES = [
+const WEEK_DAYS = [
+  "الأحد",
+  "الاثنين",
+  "الثلاثاء",
+  "الأربعاء",
+  "الخميس",
+  "الجمعة",
+  "السبت"
+];
+
+const BASE_SEED_PLACES = [
   {
     name: "صيدلية الشفاء",
     type: "pharmacy",
@@ -28,7 +38,8 @@ const SEED_PLACES = [
     image: "",
     lat: 33.5138,
     lng: 36.2765,
-    schedule: [todayISO]
+    schedule: [todayISO],
+    workdays: WEEK_DAYS
   },
   {
     name: "عيادة الدكتور أمجد",
@@ -46,7 +57,8 @@ const SEED_PLACES = [
     image: "",
     lat: 36.2021,
     lng: 37.1343,
-    schedule: []
+    schedule: [],
+    workdays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
   },
   {
     name: "مخبر الأمل الطبي",
@@ -64,9 +76,95 @@ const SEED_PLACES = [
     image: "",
     lat: 34.7309,
     lng: 36.7094,
-    schedule: []
+    schedule: [],
+    workdays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
   }
 ];
+
+function generateSamplePlaces(count = 50) {
+  const types = ["pharmacy", "clinic", "hospital", "dispensary", "lab"];
+  const typeNames = {
+    pharmacy: "صيدلية",
+    clinic: "عيادة",
+    hospital: "مشفى",
+    dispensary: "مستوصف",
+    lab: "مخبر"
+  };
+  const specialties = {
+    clinic: ["قلبية", "عينية", "جلدية", "أسنان", "عظمية"],
+    lab: ["تحاليل", "هرمونات", "فيروسات"],
+    hospital: ["عام", "نسائية", "أطفال"],
+    dispensary: ["عام"],
+    pharmacy: [""]
+  };
+  const locationsList = [
+    { gov: "دمشق", city: "دمشق", lat: 33.5138, lng: 36.2765 },
+    { gov: "حلب", city: "حلب", lat: 36.2021, lng: 37.1343 },
+    { gov: "حمص", city: "حمص", lat: 34.7309, lng: 36.7094 },
+    { gov: "حماة", city: "حماة", lat: 35.1318, lng: 36.7578 },
+    { gov: "اللاذقية", city: "اللاذقية", lat: 35.5306, lng: 35.7901 },
+    { gov: "طرطوس", city: "طرطوس", lat: 34.8896, lng: 35.8866 },
+    { gov: "إدلب", city: "إدلب", lat: 35.93, lng: 36.63 },
+    { gov: "دير الزور", city: "دير الزور", lat: 35.3336, lng: 40.15 }
+  ];
+
+  const list = [];
+  for (let i = 0; i < count; i += 1) {
+    const type = types[i % types.length];
+    const loc = locationsList[i % locationsList.length];
+    const specList = specialties[type] || [""];
+    const specialty = specList[i % specList.length] || "";
+    const suffix = i + 1;
+    const name = `${typeNames[type]} النبض ${suffix}`;
+    list.push({
+      name,
+      type,
+      specialty,
+      phone: `09${(1000000 + i).toString().slice(0, 7)}`,
+      whatsapp: "",
+      email: "",
+      governorate: loc.gov,
+      city: loc.city,
+      address: `شارع رئيسي - بناء رقم ${suffix}`,
+      hours: "08:00 - 20:00",
+      services: "خدمة استقبال واستشارات أولية",
+      notes: "",
+      image: "",
+      lat: loc.lat + (i % 5) * 0.01,
+      lng: loc.lng + (i % 5) * 0.01,
+      schedule: type === "pharmacy" && i % 3 === 0 ? [todayISO] : [],
+      workdays: i % 4 === 0 ? WEEK_DAYS : ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
+    });
+  }
+  return list;
+}
+
+const SEED_PLACES = [...BASE_SEED_PLACES, ...generateSamplePlaces(50)];
+
+async function appendSamplePlaces() {
+  const samples = generateSamplePlaces(50);
+  const existing = new Set(places.map(placeKey));
+  const toAdd = samples.filter(sample => !existing.has(placeKey(sample)));
+  if (!toAdd.length) return;
+
+  if (window.supabaseClient) {
+    try {
+      const { data, error } = await window.supabaseClient
+        .from("places")
+        .insert(toAdd)
+        .select("*");
+      if (error) throw error;
+      places = [...places, ...(data || toAdd)];
+      savePlaces();
+      return;
+    } catch {
+      // fallback to local
+    }
+  }
+
+  places = [...places, ...toAdd];
+  savePlaces();
+}
 
 let map = null;
 let marker = null;
@@ -167,6 +265,8 @@ const governorate = document.getElementById("governorate");
 const city = document.getElementById("city");
 const address = document.getElementById("address");
 const hours = document.getElementById("hours");
+const hoursStart = document.getElementById("hoursStart");
+const hoursEnd = document.getElementById("hoursEnd");
 const services = document.getElementById("services");
 const notes = document.getElementById("notes");
 const image = document.getElementById("image");
@@ -184,6 +284,8 @@ const lat = document.getElementById("lat");
 const lng = document.getElementById("lng");
 const editIndex = document.getElementById("editIndex");
 const clearDutyDates = document.getElementById("clearDutyDates");
+const workdaysAll = document.getElementById("workdaysAll");
+const workdaysInputs = [...document.querySelectorAll('input[name="workdays"]')];
 
 const filterType = document.getElementById("filterType");
 const filterGov = document.getElementById("filterGov");
@@ -417,6 +519,51 @@ function normalizeSchedule(value) {
   }
   return [];
 }
+
+function buildHoursValue() {
+  const start = hoursStart?.value || "";
+  const end = hoursEnd?.value || "";
+  if (start && end) return `${start} - ${end}`;
+  return start || end || "";
+}
+
+function fillHoursFields(value) {
+  if (!hoursStart || !hoursEnd) return;
+  if (!value) {
+    hoursStart.value = "";
+    hoursEnd.value = "";
+    return;
+  }
+  const parts = value.split("-").map(v => v.trim());
+  hoursStart.value = parts[0] || "";
+  hoursEnd.value = parts[1] || "";
+}
+
+function getWorkdaysFromForm() {
+  const selected = workdaysInputs
+    .filter(input => input.checked)
+    .map(input => input.value);
+  if (workdaysAll?.checked) return WEEK_DAYS;
+  return selected;
+}
+
+function setWorkdaysForm(values = []) {
+  const set = new Set(values);
+  workdaysInputs.forEach(input => {
+    input.checked = set.has(input.value);
+  });
+  if (workdaysAll) {
+    workdaysAll.checked = WEEK_DAYS.every(day => set.has(day));
+  }
+}
+
+function syncWorkdaysAll() {
+  if (!workdaysAll) return;
+  const allChecked = WEEK_DAYS.every(day =>
+    workdaysInputs.some(input => input.value === day && input.checked)
+  );
+  workdaysAll.checked = allChecked;
+}
 function typeLabel(type) {
   if (type === "hospital") return "مشفى";
   if (type === "dispensary") return "مستوصف";
@@ -623,6 +770,9 @@ function resetForm() {
   [name, type, specialty, phone, whatsapp, email, address, hours, services, notes, image, lat, lng]
     .filter(Boolean)
     .forEach(input => input.value = "");
+  if (hoursStart) hoursStart.value = "";
+  if (hoursEnd) hoursEnd.value = "";
+  setWorkdaysForm([]);
   dutyDates = [];
   updateImagePreview("");
   if (marker && map) {
@@ -650,6 +800,7 @@ function fillForm(i) {
   email.value = place.email || "";
   address.value = place.address || "";
   hours.value = place.hours || "";
+  fillHoursFields(place.hours || "");
   services.value = place.services || "";
   notes.value = place.notes || "";
   image.value = place.image || "";
@@ -657,6 +808,7 @@ function fillForm(i) {
   lat.value = place.lat || "";
   lng.value = place.lng || "";
   dutyDates = place.schedule || [];
+  setWorkdaysForm(place.workdays || []);
 
   populateSelect(governorate, Object.keys(locations), "اختر المحافظة");
   governorate.value = place.governorate || "";
@@ -807,6 +959,8 @@ function savePlace() {
   if (!validateForm()) return;
 
   const normalizedSchedule = dutyDates.map(d => (d || "").toString().split("T")[0]);
+  const hoursValue = buildHoursValue();
+  if (hours) hours.value = hoursValue;
   const data = {
     name: name.value.trim(),
     type: type.value,
@@ -817,13 +971,14 @@ function savePlace() {
     governorate: governorate.value.trim(),
     city: city.value.trim(),
     address: address.value.trim(),
-    hours: hours.value.trim(),
+    hours: hoursValue,
     services: services.value.trim(),
     notes: notes.value.trim(),
     image: image.value.trim(),
     lat: +lat.value,
     lng: +lng.value,
-    schedule: normalizedSchedule
+    schedule: normalizedSchedule,
+    workdays: getWorkdaysFromForm()
   };
 
   (async () => {
@@ -1023,6 +1178,7 @@ function exportCSV() {
     "type",
     "specialty",
     "phone",
+    "workdays",
     "governorate",
     "city",
     "address",
@@ -1035,6 +1191,7 @@ function exportCSV() {
     p.type,
     p.specialty || "",
     p.phone || "",
+    Array.isArray(p.workdays) ? p.workdays.join("|") : "",
     p.governorate || "",
     p.city || "",
     p.address || "",
@@ -1384,6 +1541,7 @@ async function bootApp() {
   locations = loadLocations();
   places = (await loadPlacesFromDb()) || loadPlaces();
   ensureSeedPlaces();
+  await appendSamplePlaces();
   logs = loadLogs();
   adminPage = 1;
   logPage = 1;
@@ -1435,6 +1593,16 @@ if (selectAll) {
   });
 }
 if (deleteSelected) deleteSelected.addEventListener("click", deleteSelectedRows);
+if (workdaysAll) {
+  workdaysAll.addEventListener("change", () => {
+    workdaysInputs.forEach(input => {
+      input.checked = workdaysAll.checked;
+    });
+  });
+}
+workdaysInputs.forEach(input => {
+  input.addEventListener("change", syncWorkdaysAll);
+});
 
 if (locGov) locGov.addEventListener("change", refreshLocationManagement);
 if (locCity) locCity.addEventListener("change", refreshLocationManagement);
