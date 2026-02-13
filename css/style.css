@@ -716,6 +716,14 @@ select:focus {
   box-shadow: var(--shadow);
 }
 
+.place-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
 .detail-header .place-icon {
   width: 64px;
   height: 64px;

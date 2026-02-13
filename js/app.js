@@ -396,9 +396,15 @@ function renderCards(list) {
 
     card.innerHTML = `
       <div class="card-head">
-        <div class="place-icon small ${place.type}">
-          <i class="fa-solid ${typeIcon(place.type)}"></i>
-        </div>
+        ${
+          place.image
+            ? `<div class="place-icon small image">
+                <img src="${place.image}" alt="${place.name}">
+              </div>`
+            : `<div class="place-icon small ${place.type}">
+                <i class="fa-solid ${typeIcon(place.type)}"></i>
+              </div>`
+        }
         <div class="card-title">
           <h3>${place.name}</h3>
           <p class="muted">
