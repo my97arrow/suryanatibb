@@ -390,23 +390,38 @@ async function loadPlacesFromDb() {
 
 async function savePlaceToDb(data, id = null) {
   if (!window.supabaseClient) return null;
-  if (id) {
-    const { data: updated, error } = await window.supabaseClient
+  const attempt = async payload => {
+    if (id) {
+      const { data: updated, error } = await window.supabaseClient
+        .from("places")
+        .update(payload)
+        .eq("id", id)
+        .select("*")
+        .single();
+      if (error) throw error;
+      return updated?.id || id;
+    }
+    const { data: inserted, error } = await window.supabaseClient
       .from("places")
-      .update(data)
-      .eq("id", id)
+      .insert(payload)
       .select("*")
       .single();
     if (error) throw error;
-    return updated?.id || id;
+    return inserted?.id || null;
+  };
+
+  try {
+    return await attempt(data);
+  } catch (error) {
+    const message = (error?.message || "").toLowerCase();
+    const needsFallback =
+      message.includes("workdays") ||
+      message.includes("column") ||
+      message.includes("schema cache");
+    if (!needsFallback) throw error;
+    const { workdays, ...fallback } = data;
+    return await attempt(fallback);
   }
-  const { data: inserted, error } = await window.supabaseClient
-    .from("places")
-    .insert(data)
-    .select("*")
-    .single();
-  if (error) throw error;
-  return inserted?.id || null;
 }
 
 async function deletePlaceFromDb(id) {
