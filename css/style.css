@@ -1273,6 +1273,32 @@ body.dark .icon-btn:hover {
   color: #fff;
 }
 
+body.dark .detail-info,
+body.dark .detail-schedule {
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+}
+
+body.dark .detail-card h3,
+body.dark .detail-title h2,
+body.dark .detail-info p,
+body.dark .detail-schedule p {
+  color: #e2e8f0;
+}
+
+body.dark .detail-card .muted {
+  color: #94a3b8;
+}
+
+body.dark .detail-card .icon-btn {
+  background: rgba(148, 163, 184, 0.22);
+}
+
+body.dark .detail-card .icon-btn:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
 body.dark .section-divider {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
 }
