@@ -293,6 +293,7 @@ const address = document.getElementById("address");
 const hours = document.getElementById("hours");
 const hoursStart = document.getElementById("hoursStart");
 const hoursEnd = document.getElementById("hoursEnd");
+const hours24 = document.getElementById("hours24");
 const services = document.getElementById("services");
 const notes = document.getElementById("notes");
 const image = document.getElementById("image");
@@ -567,6 +568,7 @@ function normalizeSchedule(value) {
 }
 
 function buildHoursValue() {
+  if (hours24?.checked) return "24 ساعة";
   const start = hoursStart?.value || "";
   const end = hoursEnd?.value || "";
   if (start && end) return `${start} - ${end}`;
@@ -575,7 +577,13 @@ function buildHoursValue() {
 
 function fillHoursFields(value) {
   if (!hoursStart || !hoursEnd) return;
+  if (hours24) hours24.checked = value === "24 ساعة";
   if (!value) {
+    hoursStart.value = "";
+    hoursEnd.value = "";
+    return;
+  }
+  if (value === "24 ساعة") {
     hoursStart.value = "";
     hoursEnd.value = "";
     return;
@@ -816,6 +824,7 @@ function resetForm() {
   [name, type, specialty, phone, whatsapp, email, address, hours, services, notes, image, lat, lng]
     .filter(Boolean)
     .forEach(input => input.value = "");
+  if (hours24) hours24.checked = false;
   if (hoursStart) hoursStart.value = "";
   if (hoursEnd) hoursEnd.value = "";
   setWorkdaysForm([]);
@@ -1691,6 +1700,14 @@ function updateMarkerFromInputs() {
 
 if (lat) lat.addEventListener("input", updateMarkerFromInputs);
 if (lng) lng.addEventListener("input", updateMarkerFromInputs);
+if (hours24) {
+  hours24.addEventListener("change", () => {
+    if (hours24.checked) {
+      if (hoursStart) hoursStart.value = "";
+      if (hoursEnd) hoursEnd.value = "";
+    }
+  });
+}
 
 ensureDefaultUser();
 locations = loadLocations();
