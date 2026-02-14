@@ -1699,6 +1699,11 @@ function parseGoogleMapsLink(value) {
   if (matchQ) return { lat: parseFloat(matchQ[1]), lng: parseFloat(matchQ[2]) };
   const matchQuery = text.match(/[?&]query=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
   if (matchQuery) return { lat: parseFloat(matchQuery[1]), lng: parseFloat(matchQuery[2]) };
+  const matchLl = text.match(/[?&]ll=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  if (matchLl) return { lat: parseFloat(matchLl[1]), lng: parseFloat(matchLl[2]) };
+  const match3d = text.match(/!3d(-?\d+(?:\.\d+)?)/);
+  const match4d = text.match(/!4d(-?\d+(?:\.\d+)?)/);
+  if (match3d && match4d) return { lat: parseFloat(match3d[1]), lng: parseFloat(match4d[1]) };
   const matchShort = text.match(/https?:\/\/maps\.app\.goo\.gl\//i);
   if (matchShort) return null;
   const matchPlain = text.match(/(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
