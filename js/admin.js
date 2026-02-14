@@ -308,6 +308,7 @@ const cropCancel = document.getElementById("cropCancel");
 let cropper = null;
 const lat = document.getElementById("lat");
 const lng = document.getElementById("lng");
+const mapLink = document.getElementById("mapLink");
 const editIndex = document.getElementById("editIndex");
 const clearDutyDates = document.getElementById("clearDutyDates");
 const workdaysAll = document.getElementById("workdaysAll");
@@ -813,7 +814,7 @@ function closeModal() {
 }
 
 function resetForm() {
-  [name, type, specialty, phone, whatsapp, email, address, hours, services, notes, image, lat, lng]
+  [name, type, specialty, phone, whatsapp, email, address, hours, services, notes, image, lat, lng, mapLink]
     .filter(Boolean)
     .forEach(input => input.value = "");
   if (hoursStart) hoursStart.value = "";
@@ -853,6 +854,7 @@ function fillForm(i) {
   updateImagePreview(place.image || "");
   lat.value = place.lat || "";
   lng.value = place.lng || "";
+  if (mapLink) mapLink.value = "";
   dutyDates = place.schedule || [];
   setWorkdaysForm(place.workdays || []);
 
@@ -1688,8 +1690,44 @@ function updateMarkerFromInputs() {
   map.setView(point, 12);
 }
 
+function parseGoogleMapsLink(value) {
+  if (!value) return null;
+  const text = value.trim();
+  const matchAt = text.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  if (matchAt) return { lat: parseFloat(matchAt[1]), lng: parseFloat(matchAt[2]) };
+  const matchQ = text.match(/[?&]q=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  if (matchQ) return { lat: parseFloat(matchQ[1]), lng: parseFloat(matchQ[2]) };
+  const matchQuery = text.match(/[?&]query=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  if (matchQuery) return { lat: parseFloat(matchQuery[1]), lng: parseFloat(matchQuery[2]) };
+  const matchShort = text.match(/https?:\/\/maps\.app\.goo\.gl\//i);
+  if (matchShort) return null;
+  const matchPlain = text.match(/(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  if (matchPlain) return { lat: parseFloat(matchPlain[1]), lng: parseFloat(matchPlain[2]) };
+  return null;
+}
+
+function applyMapLink(value) {
+  const coords = parseGoogleMapsLink(value);
+  if (!coords || Number.isNaN(coords.lat) || Number.isNaN(coords.lng)) {
+    alert("تعذر قراءة الإحداثيات من الرابط");
+    return;
+  }
+  lat.value = coords.lat.toFixed(6);
+  lng.value = coords.lng.toFixed(6);
+  updateMarkerFromInputs();
+}
+
 if (lat) lat.addEventListener("input", updateMarkerFromInputs);
 if (lng) lng.addEventListener("input", updateMarkerFromInputs);
+if (mapLink) {
+  mapLink.addEventListener("change", () => applyMapLink(mapLink.value));
+  mapLink.addEventListener("paste", event => {
+    const text = event.clipboardData?.getData("text") || "";
+    if (text) {
+      setTimeout(() => applyMapLink(mapLink.value), 0);
+    }
+  });
+}
 
 ensureDefaultUser();
 locations = loadLocations();
