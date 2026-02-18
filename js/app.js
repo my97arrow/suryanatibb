@@ -5,16 +5,6 @@ function localISODate(d = new Date()) {
 }
 const todayISO = localISODate();
 
-const WEEK_DAYS = [
-  "الأحد",
-  "الاثنين",
-  "الثلاثاء",
-  "الأربعاء",
-  "الخميس",
-  "الجمعة",
-  "السبت"
-];
-
 const elements = {
   search: document.getElementById("search"),
   filter: document.getElementById("filter"),
@@ -48,125 +38,12 @@ const THEME_KEY = "healthDutyTheme";
 
 const FILTERS_KEY = "healthDutyFilters";
 
-const BASE_SEED_PLACES = [
-  {
-    name: "صيدلية الشفاء",
-    type: "pharmacy",
-    specialty: "",
-    phone: "0950000000",
-    whatsapp: "963950000000",
-    email: "",
-    governorate: "دمشق",
-    city: "دمشق",
-    address: "شارع الثورة - جانب مشفى الهلال",
-    hours: "24 ساعة",
-    services: "قياس ضغط، سكري، إسعافات أولية",
-    notes: "",
-    image: "",
-    lat: 33.5138,
-    lng: 36.2765,
-    schedule: [todayISO],
-    workdays: WEEK_DAYS
-  },
-  {
-    name: "عيادة الدكتور أمجد",
-    type: "clinic",
-    specialty: "قلبية",
-    phone: "0941111111",
-    whatsapp: "",
-    email: "",
-    governorate: "حلب",
-    city: "حلب",
-    address: "السبيل - مقابل مشفى الجامعة",
-    hours: "9:00 - 20:00",
-    services: "استشارات قلبية، تخطيط قلب",
-    notes: "",
-    image: "",
-    lat: 36.2021,
-    lng: 37.1343,
-    schedule: [],
-    workdays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
-  },
-  {
-    name: "مخبر الأمل الطبي",
-    type: "lab",
-    specialty: "تحاليل",
-    phone: "0932222222",
-    whatsapp: "",
-    email: "",
-    governorate: "حمص",
-    city: "حمص",
-    address: "الزهراء - قرب الدوار",
-    hours: "8:00 - 19:00",
-    services: "تحاليل شاملة، سحب منزلي",
-    notes: "",
-    image: "",
-    lat: 34.7309,
-    lng: 36.7094,
-    schedule: [],
-    workdays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
-  }
-];
+const SEED_PLACES = [];
 
-function generateSamplePlaces(count = 50) {
-  const types = ["pharmacy", "clinic", "hospital", "dispensary", "lab"];
-  const typeNames = {
-    pharmacy: "صيدلية",
-    clinic: "عيادة",
-    hospital: "مشفى",
-    dispensary: "مستوصف",
-    lab: "مخبر"
-  };
-  const specialties = {
-    clinic: ["قلبية", "عينية", "جلدية", "أسنان", "عظمية"],
-    lab: ["تحاليل", "هرمونات", "فيروسات"],
-    hospital: ["عام", "نسائية", "أطفال"],
-    dispensary: ["عام"],
-    pharmacy: [""]
-  };
-  const locationsList = [
-    { gov: "دمشق", city: "دمشق", lat: 33.5138, lng: 36.2765 },
-    { gov: "حلب", city: "حلب", lat: 36.2021, lng: 37.1343 },
-    { gov: "حمص", city: "حمص", lat: 34.7309, lng: 36.7094 },
-    { gov: "حماة", city: "حماة", lat: 35.1318, lng: 36.7578 },
-    { gov: "اللاذقية", city: "اللاذقية", lat: 35.5306, lng: 35.7901 },
-    { gov: "طرطوس", city: "طرطوس", lat: 34.8896, lng: 35.8866 },
-    { gov: "إدلب", city: "إدلب", lat: 35.93, lng: 36.63 },
-    { gov: "دير الزور", city: "دير الزور", lat: 35.3336, lng: 40.15 }
-  ];
-
-  const list = [];
-  for (let i = 0; i < count; i += 1) {
-    const type = types[i % types.length];
-    const loc = locationsList[i % locationsList.length];
-    const specList = specialties[type] || [""];
-    const specialty = specList[i % specList.length] || "";
-    const suffix = i + 1;
-    const name = `${typeNames[type]} النبض ${suffix}`;
-    list.push({
-      name,
-      type,
-      specialty,
-      phone: `09${(1000000 + i).toString().slice(0, 7)}`,
-      whatsapp: "",
-      email: "",
-      governorate: loc.gov,
-      city: loc.city,
-      address: `شارع رئيسي - بناء رقم ${suffix}`,
-      hours: "08:00 - 20:00",
-      services: "خدمة استقبال واستشارات أولية",
-      notes: "",
-      image: "",
-      lat: loc.lat + (i % 5) * 0.01,
-      lng: loc.lng + (i % 5) * 0.01,
-      schedule: type === "pharmacy" && i % 3 === 0 ? [todayISO] : [],
-      workdays: i % 4 === 0 ? WEEK_DAYS : ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"]
-    });
-  }
-  return list;
+function isGeneratedSample(place) {
+  const name = (place?.name || "").trim();
+  return !!place?.seedSample || /^(صيدلية|عيادة|مشفى|مستوصف|مخبر) النبض \d+$/.test(name);
 }
-
-const SEED_PLACES = [...BASE_SEED_PLACES, ...generateSamplePlaces(50)];
 
 function loadPlaces() {
   try {
@@ -209,22 +86,6 @@ function subscribePlacesFromDb() {
       }
     )
     .subscribe();
-}
-
-async function saveSeedIfNeeded() {
-  const list = await loadPlacesFromDb();
-  if (list && list.length) return list;
-  if (!window.supabaseClient) return null;
-  try {
-    const { data, error } = await window.supabaseClient
-      .from("places")
-      .insert(SEED_PLACES)
-      .select("*");
-    if (error) throw error;
-    return data || SEED_PLACES;
-  } catch {
-    return SEED_PLACES;
-  }
 }
 
 function showToast(message) {
@@ -717,11 +578,8 @@ async function locateUser(showToastMessage = true) {
 
 async function init() {
   // 1) Show cached data immediately for fast first paint
-  let rawPlaces = loadPlaces();
-  if (!rawPlaces.length) {
-    rawPlaces = SEED_PLACES;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
-  }
+  let rawPlaces = loadPlaces().filter(place => !isGeneratedSample(place));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
   allPlaces = enrichPlaces(dedupePlaces(rawPlaces));
 
   populateSelect(elements.governorate, unique(allPlaces.map(p => p.governorate)), "كل المحافظات");
@@ -813,12 +671,9 @@ async function init() {
   try {
     rawPlaces = await loadPlacesFromDb();
     if (!rawPlaces || !rawPlaces.length) {
-      rawPlaces = await saveSeedIfNeeded();
-    }
-    if (!rawPlaces || !rawPlaces.length) {
       rawPlaces = loadPlaces();
     }
-    rawPlaces = dedupePlaces(rawPlaces || []);
+    rawPlaces = dedupePlaces((rawPlaces || []).filter(place => !isGeneratedSample(place)));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
     allPlaces = enrichPlaces(rawPlaces);
     updateCityOptions();
