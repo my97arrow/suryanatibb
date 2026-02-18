@@ -937,7 +937,8 @@ function saveCroppedImage() {
 if (type) type.onchange = toggleSpecialty;
 function toggleSpecialty() {
   if (!specialtyField || !type) return;
-  const visible = type.value === "clinic" || type.value === "lab";
+  const specialtyEnabledTypes = ["clinic", "lab", "hospital", "dispensary"];
+  const visible = specialtyEnabledTypes.includes(type.value);
   specialtyField.style.display = visible ? "block" : "none";
   if (!visible && specialtySuggestions) specialtySuggestions.hidden = true;
 }
@@ -974,8 +975,8 @@ function validateForm() {
     alert("يرجى إكمال البيانات الأساسية قبل الحفظ");
     return false;
   }
-  if ((type.value === "clinic" || type.value === "lab") && !specialty.value.trim()) {
-    alert("يرجى إدخال الاختصاص للعيادات والمخابر");
+  if ((type.value === "clinic" || type.value === "lab" || type.value === "hospital" || type.value === "dispensary") && !specialty.value.trim()) {
+    alert("يرجى إدخال اختصاص واحد على الأقل");
     return false;
   }
   if (!hasScopeForSelection()) {
@@ -1010,7 +1011,7 @@ function savePlace() {
   const data = {
     name: name.value.trim(),
     type: type.value,
-    specialty: (type.value === "clinic" || type.value === "lab") ? specialty.value.trim() : "",
+    specialty: (type.value === "clinic" || type.value === "lab" || type.value === "hospital" || type.value === "dispensary") ? specialty.value.trim() : "",
     phone: phone.value.trim(),
     whatsapp: whatsapp.value.trim(),
     email: email.value.trim(),
