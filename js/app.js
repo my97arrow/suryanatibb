@@ -328,6 +328,8 @@ function renderCards(list) {
     const card = document.createElement("article");
     card.className = `card ${place.onDuty && place.type === "pharmacy" ? "on-duty" : ""}`;
     card.tabIndex = 0;
+    const hasPhone = !!normalize(place.phone);
+    const hasWhatsapp = !!normalize(place.whatsapp);
 
     card.innerHTML = `
       <div class="card-head">
@@ -354,10 +356,10 @@ function renderCards(list) {
       </div>
       <div class="card-foot">
         <div class="card-actions">
-          <a class="icon-btn ${place.phone ? "" : "disabled"}" href="${place.phone ? `tel:${place.phone}` : "#"}">
+          <a class="icon-btn ${hasPhone ? "" : "disabled"}" href="${hasPhone ? `tel:${place.phone}` : "#"}">
             <i class="fa-solid fa-phone"></i>
           </a>
-          <a class="icon-btn ${place.whatsapp || place.phone ? "" : "disabled"}" href="${place.whatsapp || place.phone ? `https://wa.me/${place.whatsapp || place.phone}` : "#"}" target="_blank" rel="noreferrer">
+          <a class="icon-btn ${hasWhatsapp ? "" : "disabled"}" href="${hasWhatsapp ? `https://wa.me/${place.whatsapp}` : "#"}" target="_blank" rel="noreferrer">
             <i class="fa-brands fa-whatsapp"></i>
           </a>
           <a class="icon-btn" href="details.html?id=${place.id || place._index}">
