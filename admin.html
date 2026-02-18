@@ -210,6 +210,22 @@
       <button id="removeGovBtn" class="btn danger" type="button">حذف محافظة</button>
       <button id="removeCityBtn" class="btn danger" type="button">حذف مدينة</button>
     </div>
+    <hr class="admin-divider">
+    <h4>إدارة الاختصاصات (للمسؤول المميز فقط)</h4>
+    <div class="user-form">
+      <div class="field">
+        <label for="specialtySelect">الاختصاصات الحالية</label>
+        <select id="specialtySelect"></select>
+      </div>
+      <div class="field">
+        <label for="newSpecialty">إضافة اختصاص</label>
+        <input id="newSpecialty" placeholder="مثال: قلبية، أطفال، أشعة">
+      </div>
+    </div>
+    <div class="loc-actions">
+      <button id="addSpecialtyBtn" class="btn primary" type="button">إضافة اختصاص</button>
+      <button id="removeSpecialtyBtn" class="btn danger" type="button">حذف اختصاص</button>
+    </div>
   </section>
 
   <section class="log-panel" aria-label="سجل النشاطات">
@@ -240,9 +256,14 @@
           <option value="lab">مخبر طبي</option>
         </select>
       </div>
-      <div class="field">
+      <div class="field" id="specialtyField">
         <label for="specialty">الاختصاص</label>
-        <input id="specialty" placeholder="للعيادات والمخابر فقط">
+        <input id="specialty" type="hidden">
+        <div class="multi-select" id="specialtyMulti">
+          <div id="specialtyChips" class="multi-chips"></div>
+          <input id="specialtySearch" placeholder="ابحث أو اكتب اختصاص ثم Enter">
+        </div>
+        <div id="specialtySuggestions" class="multi-suggestions" hidden></div>
       </div>
       <div class="field">
         <label for="phone">الهاتف</label>

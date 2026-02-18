@@ -5,6 +5,7 @@ const LOG_KEY = "healthDutyLogs";
 const UPDATED_KEY = "healthDutyUpdated";
 const BACKUP_KEY = "healthDutyBackups";
 const LOCATIONS_KEY = "healthDutyLocations";
+const SPECIALTIES_KEY = "healthDutySpecialties";
 function localISODate(d = new Date()) {
   const tz = d.getTimezoneOffset() * 60000;
   return new Date(d.getTime() - tz).toISOString().split("T")[0];
@@ -57,7 +58,9 @@ let currentUser = null;
 let places = [];
 let logs = [];
 let locations = {};
+let specialties = [];
 let editingUser = null;
+let selectedSpecialties = [];
 
 const defaultLocations = {
   "الرقة": {
@@ -119,6 +122,28 @@ const defaultLocations = {
   }
 };
 
+const defaultSpecialties = [
+  "قلبية",
+  "داخلية",
+  "هضمية",
+  "صدرية",
+  "كلوية",
+  "غدد",
+  "عصبية",
+  "جراحة عامة",
+  "عظمية",
+  "نسائية وتوليد",
+  "أطفال",
+  "أذن أنف حنجرة",
+  "جلدية",
+  "عيون",
+  "أسنان",
+  "أشعة",
+  "تحاليل مخبرية",
+  "إسعاف",
+  "لقاحات"
+];
+
 const adminCards = document.getElementById("adminCards");
 const adminEmpty = document.getElementById("adminEmpty");
 const placeModal = document.getElementById("placeModal");
@@ -140,6 +165,10 @@ let logPage = 1;
 const name = document.getElementById("name");
 const type = document.getElementById("type");
 const specialty = document.getElementById("specialty");
+const specialtyField = document.getElementById("specialtyField");
+const specialtySearch = document.getElementById("specialtySearch");
+const specialtyChips = document.getElementById("specialtyChips");
+const specialtySuggestions = document.getElementById("specialtySuggestions");
 const phone = document.getElementById("phone");
 const whatsapp = document.getElementById("whatsapp");
 const email = document.getElementById("email");
@@ -204,6 +233,10 @@ const addGovBtn = document.getElementById("addGovBtn");
 const addCityBtn = document.getElementById("addCityBtn");
 const removeGovBtn = document.getElementById("removeGovBtn");
 const removeCityBtn = document.getElementById("removeCityBtn");
+const specialtySelect = document.getElementById("specialtySelect");
+const newSpecialty = document.getElementById("newSpecialty");
+const addSpecialtyBtn = document.getElementById("addSpecialtyBtn");
+const removeSpecialtyBtn = document.getElementById("removeSpecialtyBtn");
 
 function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
@@ -230,6 +263,45 @@ function loadLocations() {
 
 function saveLocations() {
   localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
+}
+
+function toSpecialtyArray(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(item => `${item}`.trim()).filter(Boolean);
+  return `${value}`
+    .split(/[،,|]/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeSpecialty(value) {
+  return (value || "").toString().trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function uniqueSpecialties(list) {
+  const map = new Map();
+  list.forEach(item => {
+    const clean = `${item || ""}`.trim();
+    const key = normalizeSpecialty(clean);
+    if (clean && !map.has(key)) map.set(key, clean);
+  });
+  return [...map.values()].sort((a, b) => a.localeCompare(b, "ar"));
+}
+
+function loadSpecialties() {
+  try {
+    const raw = localStorage.getItem(SPECIALTIES_KEY);
+    if (!raw) return uniqueSpecialties(defaultSpecialties);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return uniqueSpecialties(defaultSpecialties);
+    return uniqueSpecialties([...defaultSpecialties, ...parsed]);
+  } catch {
+    return uniqueSpecialties(defaultSpecialties);
+  }
+}
+
+function saveSpecialties() {
+  localStorage.setItem(SPECIALTIES_KEY, JSON.stringify(uniqueSpecialties(specialties)));
 }
 
 function loadPlaces() {
@@ -434,6 +506,78 @@ function fillHoursFields(value) {
   const parts = value.split("-").map(v => v.trim());
   hoursStart.value = parts[0] || "";
   hoursEnd.value = parts[1] || "";
+}
+
+function syncSpecialtyValue() {
+  if (!specialty) return;
+  specialty.value = selectedSpecialties.join("، ");
+}
+
+function renderSpecialtyChips() {
+  if (!specialtyChips) return;
+  specialtyChips.innerHTML = "";
+  selectedSpecialties.forEach(item => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "multi-chip";
+    chip.innerHTML = `${item} <i class="fa-solid fa-xmark"></i>`;
+    chip.addEventListener("click", () => {
+      selectedSpecialties = selectedSpecialties.filter(v => normalizeSpecialty(v) !== normalizeSpecialty(item));
+      syncSpecialtyValue();
+      renderSpecialtyChips();
+      renderSpecialtySuggestions(specialtySearch?.value || "");
+    });
+    specialtyChips.appendChild(chip);
+  });
+}
+
+function addSpecialtyToSelection(value) {
+  const clean = `${value || ""}`.trim();
+  if (!clean) return;
+  const exists = selectedSpecialties.some(v => normalizeSpecialty(v) === normalizeSpecialty(clean));
+  if (!exists) selectedSpecialties.push(clean);
+  specialties = uniqueSpecialties([...specialties, clean]);
+  saveSpecialties();
+  refreshSpecialtyManagement();
+  syncSpecialtyValue();
+  renderSpecialtyChips();
+  renderSpecialtySuggestions("");
+  if (specialtySearch) specialtySearch.value = "";
+}
+
+function setSpecialtiesForm(value) {
+  selectedSpecialties = uniqueSpecialties(toSpecialtyArray(value));
+  syncSpecialtyValue();
+  renderSpecialtyChips();
+  renderSpecialtySuggestions("");
+}
+
+function renderSpecialtySuggestions(query = "") {
+  if (!specialtySuggestions) return;
+  const q = normalizeSpecialty(query);
+  const selectedKeys = new Set(selectedSpecialties.map(item => normalizeSpecialty(item)));
+  const list = specialties.filter(item => {
+    const key = normalizeSpecialty(item);
+    if (selectedKeys.has(key)) return false;
+    if (!q) return true;
+    return key.includes(q);
+  }).slice(0, 8);
+
+  specialtySuggestions.innerHTML = "";
+  if (!list.length) {
+    specialtySuggestions.hidden = true;
+    return;
+  }
+
+  list.forEach(item => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "multi-suggestion";
+    btn.textContent = item;
+    btn.addEventListener("click", () => addSpecialtyToSelection(item));
+    specialtySuggestions.appendChild(btn);
+  });
+  specialtySuggestions.hidden = false;
 }
 
 function getWorkdaysFromForm() {
@@ -664,9 +808,10 @@ function closeModal() {
 }
 
 function resetForm() {
-  [name, type, specialty, phone, whatsapp, email, address, hours, services, notes, image, lat, lng]
+  [name, type, phone, whatsapp, email, address, hours, services, notes, image, lat, lng]
     .filter(Boolean)
     .forEach(input => input.value = "");
+  setSpecialtiesForm([]);
   if (hours24) hours24.checked = false;
   if (hoursStart) hoursStart.value = "";
   if (hoursEnd) hoursEnd.value = "";
@@ -692,7 +837,8 @@ function fillForm(i) {
   editIndex.value = i;
   name.value = place.name || "";
   type.value = place.type || "";
-  specialty.value = place.specialty || "";
+  toggleSpecialty();
+  setSpecialtiesForm(place.specialty || "");
   phone.value = place.phone || "";
   whatsapp.value = place.whatsapp || "";
   email.value = place.email || "";
@@ -790,8 +936,10 @@ function saveCroppedImage() {
 
 if (type) type.onchange = toggleSpecialty;
 function toggleSpecialty() {
-  if (!specialty || !type) return;
-  specialty.style.display = type.value === "clinic" || type.value === "lab" ? "block" : "none";
+  if (!specialtyField || !type) return;
+  const visible = type.value === "clinic" || type.value === "lab";
+  specialtyField.style.display = visible ? "block" : "none";
+  if (!visible && specialtySuggestions) specialtySuggestions.hidden = true;
 }
 
 function initDutyPicker(d = []) {
@@ -826,7 +974,7 @@ function validateForm() {
     alert("يرجى إكمال البيانات الأساسية قبل الحفظ");
     return false;
   }
-  if ((type.value === "clinic" || type.value === "lab") && !specialty.value) {
+  if ((type.value === "clinic" || type.value === "lab") && !specialty.value.trim()) {
     alert("يرجى إدخال الاختصاص للعيادات والمخابر");
     return false;
   }
@@ -862,7 +1010,7 @@ function savePlace() {
   const data = {
     name: name.value.trim(),
     type: type.value,
-    specialty: specialty.value.trim(),
+    specialty: (type.value === "clinic" || type.value === "lab") ? specialty.value.trim() : "",
     phone: phone.value.trim(),
     whatsapp: whatsapp.value.trim(),
     email: email.value.trim(),
@@ -1326,6 +1474,51 @@ function refreshLocationManagement() {
   if (prevCity && cities.includes(prevCity)) locCity.value = prevCity;
 }
 
+function refreshSpecialtyManagement() {
+  if (!specialtySelect) return;
+  const prev = specialtySelect.value;
+  specialtySelect.innerHTML = "";
+  specialties.forEach(item => {
+    const option = document.createElement("option");
+    option.value = item;
+    option.textContent = item;
+    specialtySelect.appendChild(option);
+  });
+  if (prev && specialties.includes(prev)) specialtySelect.value = prev;
+}
+
+function addSpecialty() {
+  if (currentUser?.role !== "super") {
+    alert("هذه العملية للمسؤول المميز فقط");
+    return;
+  }
+  const value = newSpecialty?.value?.trim();
+  if (!value) return;
+  specialties = uniqueSpecialties([...specialties, value]);
+  saveSpecialties();
+  refreshSpecialtyManagement();
+  newSpecialty.value = "";
+  logAction("تمت إضافة اختصاص");
+}
+
+function removeSpecialty() {
+  if (currentUser?.role !== "super") {
+    alert("هذه العملية للمسؤول المميز فقط");
+    return;
+  }
+  const value = specialtySelect?.value;
+  if (!value) return;
+  if (!confirm("هل تريد حذف هذا الاختصاص من القائمة؟")) return;
+  specialties = specialties.filter(item => normalizeSpecialty(item) !== normalizeSpecialty(value));
+  selectedSpecialties = selectedSpecialties.filter(item => normalizeSpecialty(item) !== normalizeSpecialty(value));
+  saveSpecialties();
+  refreshSpecialtyManagement();
+  syncSpecialtyValue();
+  renderSpecialtyChips();
+  renderSpecialtySuggestions(specialtySearch?.value || "");
+  logAction("تم حذف اختصاص");
+}
+
 function addGovernorate() {
   if (currentUser?.role !== "super") {
     alert("هذه العملية للمسؤول المميز فقط");
@@ -1437,7 +1630,13 @@ async function bootApp() {
   setUserBadge();
 
   locations = loadLocations();
+  specialties = loadSpecialties();
   places = (await loadPlacesFromDb()) || loadPlaces();
+  specialties = uniqueSpecialties([
+    ...specialties,
+    ...places.flatMap(place => toSpecialtyArray(place.specialty))
+  ]);
+  saveSpecialties();
   ensureSeedPlaces();
   await purgeSamplePlaces();
   logs = loadLogs();
@@ -1455,6 +1654,7 @@ async function bootApp() {
     updateUserScopeForm();
     renderUsers();
     refreshLocationManagement();
+    refreshSpecialtyManagement();
   } else {
     if (userManagement) userManagement.hidden = true;
     if (locationManagement) locationManagement.hidden = true;
@@ -1462,6 +1662,7 @@ async function bootApp() {
 
   populateSelect(governorate, Object.keys(locations), "اختر المحافظة");
   updateCityOptions();
+  setSpecialtiesForm([]);
   applyUserScopeToForm();
 }
 
@@ -1518,6 +1719,32 @@ if (addGovBtn) addGovBtn.addEventListener("click", addGovernorate);
 if (addCityBtn) addCityBtn.addEventListener("click", addCity);
 if (removeGovBtn) removeGovBtn.addEventListener("click", removeGovernorate);
 if (removeCityBtn) removeCityBtn.addEventListener("click", removeCity);
+if (addSpecialtyBtn) addSpecialtyBtn.addEventListener("click", addSpecialty);
+if (removeSpecialtyBtn) removeSpecialtyBtn.addEventListener("click", removeSpecialty);
+if (newSpecialty) {
+  newSpecialty.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      addSpecialty();
+    }
+  });
+}
+
+if (specialtySearch) {
+  specialtySearch.addEventListener("focus", () => renderSpecialtySuggestions(specialtySearch.value));
+  specialtySearch.addEventListener("input", () => renderSpecialtySuggestions(specialtySearch.value));
+  specialtySearch.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addSpecialtyToSelection(specialtySearch.value);
+  });
+}
+
+document.addEventListener("click", event => {
+  if (!specialtySuggestions || !specialtyField) return;
+  if (specialtyField.contains(event.target)) return;
+  specialtySuggestions.hidden = true;
+});
 
 [filterType, filterGov, filterCity]
   .filter(Boolean)
@@ -1554,6 +1781,7 @@ if (hours24) {
 
 ensureDefaultUser();
 locations = loadLocations();
+specialties = loadSpecialties();
 const session = loadSession();
 if (session) {
   currentUser = session;
