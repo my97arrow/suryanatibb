@@ -443,6 +443,7 @@ function renderCards(list) {
       </div>
       <div class="card-meta">
         <span><i class="fa-solid fa-location-dot"></i> ${place.governorate || ""} ${place.city ? "- " + place.city : ""}</span>
+        <span><i class="fa-solid fa-stethoscope"></i> ${place.specialty ? place.specialty : "اختصاص غير محدد"}</span>
         <span class="muted">${place.address || "عنوان غير محدد"}</span>
       </div>
       <div class="card-foot">

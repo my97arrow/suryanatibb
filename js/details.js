@@ -107,7 +107,6 @@ function renderDetail(place) {
         <div>
           <h2>${place.name}</h2>
           <p class="muted">${place.governorate || ""} ${place.city ? "- " + place.city : ""}</p>
-          ${place.specialty ? `<span class="chip">${place.specialty}</span>` : ""}
         </div>
       </div>
       ${
@@ -157,6 +156,10 @@ function renderDetail(place) {
     </div>
 
     <div class="detail-grid">
+      <div class="detail-info">
+        <h3>الاختصاص</h3>
+        <p>${place.specialty || "لا يوجد اختصاص محدد."}</p>
+      </div>
       <div class="detail-info">
         <h3>الخدمات</h3>
         <p>${place.services || "لم يتم إضافة خدمات بعد."}</p>
