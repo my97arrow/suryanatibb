@@ -534,11 +534,14 @@ function renderSpecialtyChips() {
 function addSpecialtyToSelection(value) {
   const clean = `${value || ""}`.trim();
   if (!clean) return;
+  const normalized = normalizeSpecialty(clean);
+  const matched = specialties.find(item => normalizeSpecialty(item) === normalized);
+  if (!matched) {
+    alert("هذا الاختصاص غير موجود ضمن قائمة الاختصاصات");
+    return;
+  }
   const exists = selectedSpecialties.some(v => normalizeSpecialty(v) === normalizeSpecialty(clean));
-  if (!exists) selectedSpecialties.push(clean);
-  specialties = uniqueSpecialties([...specialties, clean]);
-  saveSpecialties();
-  refreshSpecialtyManagement();
+  if (!exists) selectedSpecialties.push(matched);
   syncSpecialtyValue();
   renderSpecialtyChips();
   renderSpecialtySuggestions("");
