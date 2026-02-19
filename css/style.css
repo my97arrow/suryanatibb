@@ -1677,3 +1677,23 @@ body.dark #pharmacyTable td {
   pointer-events: none;
 }
 
+/* Final cards layout rules:
+   desktop = 4 cards, tablet = 2 cards, phone = 1 card */
+@media (min-width: 981px) {
+  .cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 601px) and (max-width: 980px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
