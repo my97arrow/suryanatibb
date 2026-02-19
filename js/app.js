@@ -436,15 +436,15 @@ function renderCards(list) {
         <div class="card-title">
           <h3>${place.name}</h3>
           <p class="muted">
-            ${typeLabel(place.type)}${place.specialty ? ` - ${place.specialty}` : ""}
+            ${typeLabel(place.type)}
             ${shouldShowDutyBadge(place.type) && place.onDuty ? `<span class="badge on inline-badge">مناوب</span>` : ""}
           </p>
         </div>
       </div>
       <div class="card-meta">
         <span><i class="fa-solid fa-location-dot"></i> ${place.governorate || ""} ${place.city ? "- " + place.city : ""}</span>
-        <span><i class="fa-solid fa-stethoscope"></i> ${place.specialty ? place.specialty : "اختصاص غير محدد"}</span>
-        <span class="muted">${place.address || "عنوان غير محدد"}</span>
+        ${place.specialty ? `<span><i class="fa-solid fa-stethoscope"></i> ${place.specialty}</span>` : ""}
+        ${place.address ? `<span class="muted">${place.address}</span>` : ""}
       </div>
       <div class="card-foot">
         <div class="card-actions">
