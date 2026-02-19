@@ -392,12 +392,10 @@ select:focus {
 }
 
 .compact .card-meta span {
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
 
 .card {
@@ -452,6 +450,12 @@ select:focus {
 }
 
 .card-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-meta .specialty-line {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

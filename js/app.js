@@ -443,7 +443,7 @@ function renderCards(list) {
       </div>
       <div class="card-meta">
         <span><i class="fa-solid fa-location-dot"></i> ${place.governorate || ""} ${place.city ? "- " + place.city : ""}</span>
-        ${place.specialty ? `<span><i class="fa-solid fa-stethoscope"></i> ${place.specialty}</span>` : ""}
+        ${place.specialty ? `<span class="specialty-line"><i class="fa-solid fa-stethoscope"></i> ${place.specialty}</span>` : ""}
         ${place.address ? `<span class="muted">${place.address}</span>` : ""}
       </div>
       <div class="card-foot">
