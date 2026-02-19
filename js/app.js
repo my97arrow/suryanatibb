@@ -10,6 +10,7 @@ const elements = {
   filter: document.getElementById("filter"),
   governorate: document.getElementById("governorate"),
   city: document.getElementById("city"),
+  specialtyFilter: document.getElementById("specialtyFilter"),
   sortBy: document.getElementById("sortBy"),
   locateMe: document.getElementById("locateMe"),
   toggleCompact: document.getElementById("toggleCompact"),
@@ -260,6 +261,15 @@ function unique(values) {
   );
 }
 
+function splitSpecialties(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(v => `${v}`.trim()).filter(Boolean);
+  return `${value}`
+    .split(/[|،,]/)
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
 function populateSelect(select, values, allLabel) {
   if (!select) return;
   select.innerHTML = `<option value="all">${allLabel}</option>`;
@@ -286,6 +296,29 @@ function updateCityOptions() {
   }
 }
 
+function updateSpecialtyOptions() {
+  if (!elements.specialtyFilter) return;
+  const current = elements.specialtyFilter.value;
+  const gov = elements.governorate?.value || "all";
+  const city = elements.city?.value || "all";
+  const type = elements.filter?.value || "all";
+
+  const specialties = unique(
+    allPlaces
+      .filter(place => (gov === "all" || place.governorate === gov))
+      .filter(place => (city === "all" || place.city === city))
+      .filter(place => (type === "all" || type === "onDuty" || place.type === type))
+      .flatMap(place => splitSpecialties(place.specialty))
+  );
+
+  populateSelect(elements.specialtyFilter, specialties, "كل الاختصاصات");
+  if (current && specialties.includes(current)) {
+    elements.specialtyFilter.value = current;
+  } else {
+    elements.specialtyFilter.value = "all";
+  }
+}
+
 function typeLabel(type) {
   if (type === "hospital") return "مشفى";
   if (type === "dispensary") return "مستوصف";
@@ -300,6 +333,7 @@ function getFilterState() {
     type: elements.filter?.value || "all",
     governorate: elements.governorate?.value || "all",
     city: elements.city?.value || "all",
+    specialty: elements.specialtyFilter?.value || "all",
     sortBy: elements.sortBy?.value || "default",
     compact: compactMode
   };
@@ -312,6 +346,8 @@ function applyFilterState(state) {
   if (elements.governorate) elements.governorate.value = state.governorate || "all";
   updateCityOptions();
   if (elements.city) elements.city.value = state.city || "all";
+  updateSpecialtyOptions();
+  if (elements.specialtyFilter) elements.specialtyFilter.value = state.specialty || "all";
   if (elements.sortBy) elements.sortBy.value = state.sortBy || "default";
   compactMode = !!state.compact;
 }
@@ -337,6 +373,7 @@ function parseUrlFilters() {
     type: params.get("type") || "all",
     governorate: params.get("gov") || "all",
     city: params.get("city") || "all",
+    specialty: params.get("specialty") || "all",
     sortBy: params.get("sort") || "default"
   };
 }
@@ -348,6 +385,7 @@ function buildShareUrl() {
   if (state.type && state.type !== "all") params.set("type", state.type);
   if (state.governorate && state.governorate !== "all") params.set("gov", state.governorate);
   if (state.city && state.city !== "all") params.set("city", state.city);
+  if (state.specialty && state.specialty !== "all") params.set("specialty", state.specialty);
   if (state.sortBy && state.sortBy !== "default") params.set("sort", state.sortBy);
   const base = window.location.origin + window.location.pathname;
   return params.toString() ? `${base}?${params.toString()}` : base;
@@ -512,6 +550,7 @@ function applyFilters() {
   const uiTypeFilter = elements.filter?.value || "all";
   const uiGovFilter = elements.governorate?.value || "all";
   const uiCityFilter = elements.city?.value || "all";
+  const specialtyFilter = elements.specialtyFilter?.value || "all";
   const typeFilter = uiTypeFilter !== "all" ? uiTypeFilter : (smart.type || (smart.onDuty ? "onDuty" : "all"));
   const govFilter = uiGovFilter !== "all" ? uiGovFilter : (smart.governorate || "all");
   const cityFilter = uiCityFilter !== "all" ? uiCityFilter : (smart.city || "all");
@@ -546,8 +585,11 @@ function applyFilters() {
 
     const matchesGov = govFilter === "all" || place.governorate === govFilter;
     const matchesCity = cityFilter === "all" || place.city === cityFilter;
+    const matchesSpecialty =
+      specialtyFilter === "all" ||
+      splitSpecialties(place.specialty).some(s => normalize(s) === normalize(specialtyFilter));
 
-    return matchesQuery && matchesType && matchesGov && matchesCity;
+    return matchesQuery && matchesType && matchesGov && matchesCity && matchesSpecialty;
   });
 
   if (sortBy === "name") {
@@ -576,6 +618,7 @@ function clearFilters() {
   if (elements.filter) elements.filter.value = "all";
   if (elements.governorate) elements.governorate.value = "all";
   if (elements.city) elements.city.value = "all";
+  if (elements.specialtyFilter) elements.specialtyFilter.value = "all";
   if (elements.sortBy) elements.sortBy.value = "default";
   currentPage = 1;
   applyFilters();
@@ -654,6 +697,7 @@ async function init() {
 
   populateSelect(elements.governorate, unique(allPlaces.map(p => p.governorate)), "كل المحافظات");
   updateCityOptions();
+  updateSpecialtyOptions();
 
   const urlFilters = parseUrlFilters();
   const savedFilters = loadFilters();
@@ -669,13 +713,28 @@ async function init() {
     }
     debouncedApply();
   }));
-  [elements.filter, elements.governorate, elements.city, elements.sortBy]
+  [elements.specialtyFilter, elements.sortBy]
     .filter(Boolean)
     .forEach(el => el.addEventListener("input", applyFilters));
 
   if (elements.governorate) {
     elements.governorate.addEventListener("change", () => {
       updateCityOptions();
+      updateSpecialtyOptions();
+      applyFilters();
+    });
+  }
+
+  if (elements.city) {
+    elements.city.addEventListener("change", () => {
+      updateSpecialtyOptions();
+      applyFilters();
+    });
+  }
+
+  if (elements.filter) {
+    elements.filter.addEventListener("change", () => {
+      updateSpecialtyOptions();
       applyFilters();
     });
   }
@@ -747,6 +806,7 @@ async function init() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rawPlaces));
     allPlaces = enrichPlaces(rawPlaces);
     updateCityOptions();
+    updateSpecialtyOptions();
     applyFilters();
     subscribePlacesFromDb();
   } catch {
