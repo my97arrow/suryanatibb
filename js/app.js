@@ -143,6 +143,59 @@ function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
 }
 
+function tokenizeQuery(query) {
+  return normalize(query)
+    .replace(/[^\u0600-\u06FFa-z0-9\s]/gi, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function detectTypeFromQuery(query) {
+  const q = normalize(query);
+  const typeKeywords = {
+    pharmacy: ["صيدلية", "صيدليه", "دواء", "ادوية", "أدوية"],
+    hospital: ["مشفى", "مشفى", "مستشفى", "اسعاف", "إسعاف"],
+    dispensary: ["مستوصف", "مركز صحي", "مركز"],
+    clinic: ["عيادة", "عياده", "دكتور", "طبيب"],
+    lab: ["مخبر", "مختبر", "تحاليل", "تحليل"]
+  };
+  for (const [type, words] of Object.entries(typeKeywords)) {
+    if (words.some(word => q.includes(normalize(word)))) return type;
+  }
+  return null;
+}
+
+function parseSmartQuery(query) {
+  const q = normalize(query);
+  const tokens = tokenizeQuery(q);
+  const onDuty = ["مناوب", "مناوبة", "مناوبه", "اليوم", "الآن", "حاليا", "حالياً"]
+    .some(word => q.includes(normalize(word)));
+
+  const governorates = unique(allPlaces.map(p => p.governorate));
+  const cities = unique(allPlaces.map(p => p.city));
+  const matchByContains = list =>
+    [...list]
+      .sort((a, b) => b.length - a.length)
+      .find(item => q.includes(normalize(item))) || null;
+
+  const governorate = matchByContains(governorates);
+  const city = matchByContains(cities);
+  const type = detectTypeFromQuery(q);
+
+  const ignoredWords = new Set([
+    "ابحث", "عن", "في", "قرب", "قريب", "من", "الى", "إلى", "على", "ضمن",
+    "اريد", "أريد", "لو", "سمحت", "او", "أو", "مكان", "طبي", "اماكن", "أماكن"
+  ].map(normalize));
+  const typeWords = ["صيدلية", "صيدليه", "مشفى", "مشفي", "مستشفى", "مستوصف", "عيادة", "عياده", "مخبر", "مختبر", "تحاليل", "تحليل", "دكتور", "طبيب"];
+  const onDutyWords = ["مناوب", "مناوبة", "مناوبه", "اليوم", "الآن", "حاليا", "حالياً"];
+  [...typeWords, ...onDutyWords].forEach(word => ignoredWords.add(normalize(word)));
+  if (governorate) tokenizeQuery(governorate).forEach(w => ignoredWords.add(normalize(w)));
+  if (city) tokenizeQuery(city).forEach(w => ignoredWords.add(normalize(w)));
+
+  const terms = tokens.filter(token => !ignoredWords.has(normalize(token)));
+  return { type, onDuty, governorate, city, terms, hasIntent: !!(type || onDuty || governorate || city) };
+}
+
 function placeKey(place) {
   return [
     normalize(place.name),
@@ -455,21 +508,36 @@ function renderMarkers(list) {
 
 function applyFilters() {
   const query = normalize(elements.search?.value);
-  const typeFilter = elements.filter?.value || "all";
-  const govFilter = elements.governorate?.value || "all";
-  const cityFilter = elements.city?.value || "all";
+  const smart = parseSmartQuery(query);
+  const uiTypeFilter = elements.filter?.value || "all";
+  const uiGovFilter = elements.governorate?.value || "all";
+  const uiCityFilter = elements.city?.value || "all";
+  const typeFilter = uiTypeFilter !== "all" ? uiTypeFilter : (smart.type || (smart.onDuty ? "onDuty" : "all"));
+  const govFilter = uiGovFilter !== "all" ? uiGovFilter : (smart.governorate || "all");
+  const cityFilter = uiCityFilter !== "all" ? uiCityFilter : (smart.city || "all");
   const sortBy = elements.sortBy?.value || "default";
 
   let filtered = allPlaces.filter(place => {
-    const matchesQuery = !query ||
-      normalize(place.name).includes(query) ||
-      normalize(place.specialty).includes(query) ||
-      normalize(place.address).includes(query) ||
-      normalize(place.governorate).includes(query) ||
-      normalize(place.city).includes(query) ||
-      normalize(place.phone).includes(query) ||
-      normalize(place.whatsapp).includes(query) ||
-      normalize(place.email).includes(query);
+    const haystack = normalize([
+      place.name,
+      place.specialty,
+      place.address,
+      place.governorate,
+      place.city,
+      place.phone,
+      place.whatsapp,
+      place.email,
+      place.services,
+      place.notes,
+      typeLabel(place.type),
+      place.onDuty ? "مناوب مناوبة" : ""
+    ].join(" "));
+
+    const matchesQuery = !query || (
+      smart.terms.length
+        ? smart.terms.every(term => haystack.includes(normalize(term)))
+        : haystack.includes(query)
+    );
 
     const matchesType =
       typeFilter === "all" ||
