@@ -54,7 +54,47 @@
   </section>
 
   <section id="adminApp" hidden>
-  <section class="stats" aria-label="ملخص الإدارة">
+  <div class="admin-layout">
+  <aside class="admin-sidebar">
+    <button class="admin-nav-btn active" type="button" data-admin-view="dashboard">
+      <i class="fa-solid fa-chart-line"></i>
+      الإحصائيات
+    </button>
+    <button class="admin-nav-btn" type="button" id="navAddPlace">
+      <i class="fa-solid fa-plus"></i>
+      إضافة مكان طبي
+    </button>
+    <button class="admin-nav-btn" type="button" data-admin-view="places">
+      <i class="fa-solid fa-table-list"></i>
+      جدول الأماكن الطبية
+    </button>
+    <button class="admin-nav-btn" type="button" data-admin-view="users" data-super-only="true">
+      <i class="fa-solid fa-users-gear"></i>
+      إدارة المستخدمين
+    </button>
+    <button class="admin-nav-btn" type="button" data-admin-view="locations" data-super-only="true">
+      <i class="fa-solid fa-map-location-dot"></i>
+      إدارة المحافظات والمدن
+    </button>
+    <button class="admin-nav-btn" type="button" data-admin-view="specialties" data-super-only="true">
+      <i class="fa-solid fa-stethoscope"></i>
+      إدارة الاختصاصات
+    </button>
+    <button class="admin-nav-btn" type="button" data-admin-view="applications" data-super-only="true">
+      <i class="fa-solid fa-file-signature"></i>
+      طلبات إضافة/تعديل الأماكن
+    </button>
+    <button class="admin-nav-btn" type="button" data-admin-view="reports" data-super-only="true">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      بلاغات المستخدمين
+    </button>
+    <button class="admin-nav-btn" type="button" data-admin-view="logs">
+      <i class="fa-solid fa-clock-rotate-left"></i>
+      سجل النشاط
+    </button>
+  </aside>
+  <div class="admin-main">
+  <section id="dashboardSection" class="stats" aria-label="ملخص الإدارة" data-view="dashboard">
     <div class="stat-card">
       <span>عدد الأماكن</span>
       <strong id="adminTotal">0</strong>
@@ -77,6 +117,7 @@
     </div>
   </section>
 
+  <div id="placesSection" data-view="places">
   <section class="admin-toolbar">
     <button class="btn primary" onclick="openModal()">
       <i class="fa-solid fa-plus"></i>
@@ -144,7 +185,7 @@
     </div>
   </section>
 
-  <section id="userManagement" class="log-panel" hidden>
+  <section id="userManagement" class="log-panel" data-view="users" hidden>
     <h3>إدارة المستخدمين</h3>
     <div class="controls">
       <div class="field">
@@ -192,7 +233,7 @@
     <div id="usersList" class="user-list"></div>
   </section>
 
-  <section id="locationManagement" class="log-panel" hidden>
+  <section id="locationManagement" class="log-panel" data-view="locations" hidden>
     <h3>إدارة المحافظات والمدن (للمسؤول المميز فقط)</h3>
     <div class="user-form">
       <div class="field">
@@ -218,8 +259,10 @@
       <button id="removeGovBtn" class="btn danger" type="button">حذف محافظة</button>
       <button id="removeCityBtn" class="btn danger" type="button">حذف مدينة</button>
     </div>
-    <hr class="admin-divider">
-    <h4>إدارة الاختصاصات (للمسؤول المميز فقط)</h4>
+  </section>
+
+  <section id="specialtyManagement" class="log-panel" data-view="specialties" hidden>
+    <h3>إدارة الاختصاصات (للمسؤول المميز فقط)</h3>
     <div class="user-form">
       <div class="field">
         <label for="specialtySelect">الاختصاصات الحالية</label>
@@ -236,13 +279,13 @@
     </div>
   </section>
 
-  <section class="log-panel" aria-label="سجل النشاطات">
+  <section id="activityPanel" class="log-panel" aria-label="سجل النشاطات" data-view="logs">
     <h3>سجل النشاط</h3>
     <ul id="adminLog" class="log-list"></ul>
     <div class="pagination" id="logPagination"></div>
   </section>
 
-  <section id="reportsPanel" class="log-panel" hidden>
+  <section id="reportsPanel" class="log-panel" data-view="reports" hidden>
     <h3>بلاغات المستخدمين</h3>
     <div class="controls">
       <div class="field">
@@ -276,7 +319,7 @@
     </div>
   </section>
 
-  <section id="applicationsPanel" class="log-panel" hidden>
+  <section id="applicationsPanel" class="log-panel" data-view="applications" hidden>
     <h3>طلبات إضافة/تعديل الأماكن</h3>
     <div class="controls">
       <div class="field">
@@ -318,6 +361,8 @@
       <p>لا توجد طلبات حالياً.</p>
     </div>
   </section>
+  </div>
+  </div>
   </section>
 </main>
 

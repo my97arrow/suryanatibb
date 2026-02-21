@@ -57,6 +57,7 @@ let dutyPicker = null;
 let dutyDates = [];
 let pendingIndex = null;
 let currentUser = null;
+let currentAdminView = "dashboard";
 let places = [];
 let logs = [];
 let locations = {};
@@ -220,6 +221,12 @@ const filterCity = document.getElementById("filterCity");
 
 const loginPanel = document.getElementById("loginPanel");
 const adminApp = document.getElementById("adminApp");
+const dashboardSection = document.getElementById("dashboardSection");
+const placesSection = document.getElementById("placesSection");
+const activityPanel = document.getElementById("activityPanel");
+const specialtyManagement = document.getElementById("specialtyManagement");
+const navAddPlace = document.getElementById("navAddPlace");
+const adminNavButtons = [...document.querySelectorAll(".admin-nav-btn[data-admin-view]")];
 const loginUser = document.getElementById("loginUser");
 const loginPass = document.getElementById("loginPass");
 const loginBtn = document.getElementById("loginBtn");
@@ -1983,6 +1990,48 @@ function renderApplications() {
   });
 }
 
+function isSuperOnlyView(view) {
+  return ["users", "locations", "specialties", "applications", "reports"].includes(view);
+}
+
+function canAccessView(view) {
+  if (!view) return false;
+  if (!isSuperOnlyView(view)) return true;
+  return currentUser?.role === "super";
+}
+
+function applyAdminView(view) {
+  const selectedView = canAccessView(view) ? view : "dashboard";
+  currentAdminView = selectedView;
+  const sections = [
+    dashboardSection,
+    placesSection,
+    userManagement,
+    locationManagement,
+    specialtyManagement,
+    activityPanel,
+    reportsPanel,
+    applicationsPanel
+  ].filter(Boolean);
+  sections.forEach(section => {
+    const sectionView = section.dataset?.view;
+    section.hidden = sectionView !== selectedView;
+  });
+  adminNavButtons.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.adminView === selectedView);
+  });
+}
+
+function configureAdminSidebarByRole() {
+  const isSuper = currentUser?.role === "super";
+  document.querySelectorAll(".admin-nav-btn[data-super-only='true']").forEach(btn => {
+    btn.hidden = !isSuper;
+  });
+  if (!canAccessView(currentAdminView)) {
+    applyAdminView("dashboard");
+  }
+}
+
 function updateToolbarByRole() {
   const buttons = document.querySelectorAll(".admin-toolbar button");
   buttons.forEach(btn => {
@@ -2047,26 +2096,19 @@ async function bootApp() {
   renderLogs();
   renderAdmin();
   updateToolbarByRole();
+  configureAdminSidebarByRole();
 
   if (currentUser.role === "super") {
-    if (userManagement) userManagement.hidden = false;
-    if (locationManagement) locationManagement.hidden = false;
     populateUserScopeOptions();
     updateUserScopeForm();
     renderUsers();
     refreshLocationManagement();
     refreshSpecialtyManagement();
-    if (reportsPanel) reportsPanel.hidden = false;
     renderReports();
-    if (applicationsPanel) applicationsPanel.hidden = false;
     renderApplications();
-  } else {
-    if (userManagement) userManagement.hidden = true;
-    if (locationManagement) locationManagement.hidden = true;
-    if (reportsPanel) reportsPanel.hidden = true;
-    if (applicationsPanel) applicationsPanel.hidden = true;
   }
 
+  applyAdminView("dashboard");
   populateSelect(governorate, Object.keys(locations), "اختر المحافظة");
   updateCityOptions();
   setSpecialtiesForm([]);
@@ -2077,6 +2119,18 @@ if (governorate) governorate.addEventListener("change", () => {
   updateCityOptions();
   applyUserScopeToForm();
 });
+adminNavButtons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    const view = btn.dataset.adminView;
+    applyAdminView(view || "dashboard");
+  });
+});
+if (navAddPlace) {
+  navAddPlace.addEventListener("click", () => {
+    applyAdminView("places");
+    openModal();
+  });
+}
 if (image) image.addEventListener("input", () => updateImagePreview(image.value.trim()));
 if (imageFile) imageFile.addEventListener("change", handleImageFile);
 if (rotateLeft) rotateLeft.addEventListener("click", () => cropper?.rotate(-90));
