@@ -613,9 +613,29 @@ async function saveApplicationToDb(application) {
       .single();
     if (error) throw error;
     return data?.id || null;
-  } catch {
+  } catch (error) {
+    saveApplicationToDb.lastError = error;
     return null;
   }
+}
+
+async function syncPendingApplicationsToDb() {
+  const local = loadLocal(APPLICATIONS_KEY, []);
+  if (!Array.isArray(local) || !local.length) return { synced: 0, failed: 0 };
+  let synced = 0;
+  let failed = 0;
+  for (let i = 0; i < local.length; i += 1) {
+    if (local[i]?.id) continue;
+    const insertedId = await saveApplicationToDb(local[i]);
+    if (insertedId) {
+      local[i].id = insertedId;
+      synced += 1;
+    } else {
+      failed += 1;
+    }
+  }
+  saveLocal(APPLICATIONS_KEY, local);
+  return { synced, failed };
 }
 
 function placeKey(place) {
@@ -853,10 +873,16 @@ async function submitApplication() {
     }
     showToast("تم إرسال الطلب بنجاح");
   } else {
-    showToast("تم الحفظ محلياً فقط، تحقق من الاتصال");
+    const errCode = saveApplicationToDb.lastError?.code || "";
+    if (errCode === "PGRST205") {
+      showToast("تعذر الحفظ على الإنترنت: جدول الطلبات غير مفعّل في Supabase");
+    } else {
+      showToast("تم الحفظ محلياً فقط، سيُعاد الإرسال تلقائياً عند توفر الاتصال");
+    }
   }
 
   setIntlPhoneValue(trackPhone, getIntlPhoneValue(ownerPhone));
+  await syncPendingApplicationsToDb();
   await renderOwnerRequests();
 }
 
@@ -915,6 +941,7 @@ async function init() {
   updateImagePreview("");
   syncUpdateMode();
   initMap();
+  await syncPendingApplicationsToDb();
 }
 
 if (governorateInput) governorateInput.addEventListener("change", updateCities);
@@ -955,6 +982,9 @@ if (specialtySearch) {
     addSpecialtyToSelection(specialtySearch.value);
   });
 }
+window.addEventListener("online", () => {
+  syncPendingApplicationsToDb();
+});
 document.addEventListener("click", event => {
   if (!specialtySuggestions || !specialtyField) return;
   if (specialtyField.contains(event.target)) return;
