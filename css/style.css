@@ -1467,6 +1467,32 @@ body.admin {
   padding: 8px 10px;
 }
 
+.sidebar-user-badge.role-root {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.16));
+  border-color: rgba(217, 119, 6, 0.35);
+  color: #92400e;
+}
+
+.sidebar-user-badge.role-super {
+  background: rgba(14, 116, 144, 0.12);
+  border-color: rgba(14, 116, 144, 0.26);
+}
+
+.sidebar-user-badge.role-governorate {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+.sidebar-user-badge.role-city {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.28);
+}
+
+.sidebar-user-badge.role-viewer {
+  background: rgba(148, 163, 184, 0.16);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
 .admin-sidebar-backdrop {
   position: fixed;
   inset: 0;
@@ -1560,6 +1586,12 @@ body.dark .sidebar-user-badge {
   background: rgba(56, 189, 248, 0.15);
   border-color: rgba(125, 211, 252, 0.25);
   color: #cfe9ff;
+}
+
+body.dark .sidebar-user-badge.role-root {
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.2);
 }
 
 body.dark .admin-nav-btn {
@@ -2338,6 +2370,66 @@ body.dark #pharmacyTable td {
   border-radius: var(--radius-sm);
   background: rgba(15, 23, 42, 0.05);
   font-size: 13px;
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-inline-end: 6px;
+}
+
+.role-pill.role-root {
+  background: rgba(245, 158, 11, 0.18);
+  color: #92400e;
+}
+
+.role-pill.role-super {
+  background: rgba(14, 116, 144, 0.14);
+  color: #0f4c5f;
+}
+
+.role-pill.role-governorate {
+  background: rgba(16, 185, 129, 0.14);
+  color: #065f46;
+}
+
+.role-pill.role-city {
+  background: rgba(59, 130, 246, 0.14);
+  color: #1e3a8a;
+}
+
+.role-pill.role-viewer {
+  background: rgba(148, 163, 184, 0.16);
+  color: #334155;
+}
+
+body.dark .role-pill.role-root {
+  background: rgba(245, 158, 11, 0.24);
+  color: #fde68a;
+}
+
+body.dark .role-pill.role-super {
+  background: rgba(56, 189, 248, 0.22);
+  color: #bae6fd;
+}
+
+body.dark .role-pill.role-governorate {
+  background: rgba(16, 185, 129, 0.24);
+  color: #a7f3d0;
+}
+
+body.dark .role-pill.role-city {
+  background: rgba(59, 130, 246, 0.24);
+  color: #bfdbfe;
+}
+
+body.dark .role-pill.role-viewer {
+  background: rgba(148, 163, 184, 0.24);
+  color: #e2e8f0;
 }
 
 .toolbar-actions .btn[disabled],
