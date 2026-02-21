@@ -157,7 +157,6 @@ const adminTotal = document.getElementById("adminTotal");
 const adminOnDuty = document.getElementById("adminOnDuty");
 const adminUpdated = document.getElementById("adminUpdated");
 const adminUnverified = document.getElementById("adminUnverified");
-const adminLowQuality = document.getElementById("adminLowQuality");
 const adminLog = document.getElementById("adminLog");
 const adminTable = document.getElementById("adminTable");
 const selectAll = document.getElementById("selectAll");
@@ -1294,17 +1293,15 @@ function renderAdmin() {
   const isSuper = currentUser?.role === "super";
 
   slice.forEach(place => {
-    const quality = placeQuality(place);
     const verifiedLabel = place.verified ? "موثّق" : "غير موثّق";
     const updatedLabel = place.updated_at ? new Date(place.updated_at).toLocaleDateString("ar") : "-";
     const row = document.createElement("tr");
     if (!place.verified) row.classList.add("row-unverified");
-    if (quality.score < 55) row.classList.add("row-low-quality");
     row.innerHTML = `
       <td>${isSuper ? `<input type="checkbox" class="row-check" data-index="${place._index}">` : ""}</td>
       <td>
         <strong>${place.name}</strong>
-        <div class="muted">${verifiedLabel} • جودة ${quality.label} (${quality.score}%) • تحديث ${updatedLabel}</div>
+        <div class="muted">${verifiedLabel} • تحديث ${updatedLabel}</div>
       </td>
       <td>${typeLabel(place.type)}</td>
       <td>${place.governorate || ""}</td>
@@ -1319,7 +1316,7 @@ function renderAdmin() {
         ` : ""}
         ${isSuper ? `
           <button class="table-icon-btn ${place.verified ? "warn" : "ok"}" type="button" data-verify="${place._index}" title="${place.verified ? "إلغاء التوثيق" : "توثيق"}" aria-label="${place.verified ? "إلغاء التوثيق" : "توثيق"}">
-            <i class="fa-solid ${place.verified ? "fa-shield-halved" : "fa-shield-check"}"></i>
+            <i class="fa-solid ${place.verified ? "fa-shield" : "fa-circle-check"}"></i>
           </button>
         ` : ""}
         ${isSuper ? `
@@ -1378,9 +1375,6 @@ function updateAdminStats(list) {
     adminOnDuty.textContent = list.filter(p => p.type === "pharmacy" && isOnDuty(p)).length;
   if (adminUnverified) {
     adminUnverified.textContent = list.filter(p => !p.verified).length;
-  }
-  if (adminLowQuality) {
-    adminLowQuality.textContent = list.filter(p => placeQuality(p).score < 55).length;
   }
   if (adminUpdated) {
     const last = localStorage.getItem(UPDATED_KEY);
@@ -1947,11 +1941,19 @@ function renderApplications() {
       <td>${app.submitted_by_name || "-"}<br><span class="muted">${app.submitted_by_phone || ""}</span></td>
       <td>${applicationStatusLabel(app.status || "pending")}</td>
       <td>${app.submitted_at ? new Date(app.submitted_at).toLocaleString("ar") : "-"}</td>
-      <td>
-        <button class="btn ghost" data-app-status="${index}" data-next="in_review">مراجعة</button>
-        <button class="btn primary" data-app-status="${index}" data-next="approved">قبول</button>
-        <button class="btn danger" data-app-status="${index}" data-next="rejected">رفض</button>
-        <button class="btn ghost" data-app-status="${index}" data-next="needs_changes">طلب تعديل</button>
+      <td class="table-row-actions">
+        <button class="table-icon-btn" type="button" data-app-status="${index}" data-next="in_review" title="قيد المراجعة" aria-label="قيد المراجعة">
+          <i class="fa-solid fa-eye"></i>
+        </button>
+        <button class="table-icon-btn ok" type="button" data-app-status="${index}" data-next="approved" title="قبول" aria-label="قبول">
+          <i class="fa-solid fa-check"></i>
+        </button>
+        <button class="table-icon-btn danger" type="button" data-app-status="${index}" data-next="rejected" title="رفض" aria-label="رفض">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <button class="table-icon-btn warn" type="button" data-app-status="${index}" data-next="needs_changes" title="طلب تعديل" aria-label="طلب تعديل">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
       </td>
     `;
     tbody.appendChild(row);

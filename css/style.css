@@ -1750,6 +1750,9 @@ body.dark #ownerRequestsTable tbody tr:hover td {
   justify-content: flex-end;
   gap: 8px;
   white-space: nowrap;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  line-height: 1;
 }
 
 .table-icon-btn {
@@ -1762,8 +1765,14 @@ body.dark #ownerRequestsTable tbody tr:hover td {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  vertical-align: middle;
   cursor: pointer;
   transition: 0.2s ease;
+}
+
+.table-icon-btn i {
+  font-size: 13px;
+  line-height: 1;
 }
 
 .table-icon-btn:hover {
@@ -1889,16 +1898,8 @@ body.dark .owner-status.status-needs-changes {
   background: rgba(245, 158, 11, 0.08);
 }
 
-#adminTable tr.row-low-quality td {
-  background: rgba(239, 68, 68, 0.08);
-}
-
 body.dark #adminTable tr.row-unverified td {
   background: rgba(245, 158, 11, 0.16);
-}
-
-body.dark #adminTable tr.row-low-quality td {
-  background: rgba(239, 68, 68, 0.16);
 }
 
 .table-actions {
