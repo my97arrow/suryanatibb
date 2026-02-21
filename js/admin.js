@@ -1,6 +1,7 @@
 ﻿const STORAGE_KEY = "places";
 const USERS_KEY = "healthDutyUsers";
 const USERS_TABLE = "admin_users";
+const LOCATIONS_TABLE = "managed_locations";
 const SESSION_KEY = "healthDutySession";
 const LOG_KEY = "healthDutyLogs";
 const UPDATED_KEY = "healthDutyUpdated";
@@ -355,6 +356,90 @@ function loadLocations() {
 
 function saveLocations() {
   localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
+}
+
+function normalizeLocationsShape(input) {
+  const output = {};
+  Object.entries(input || {}).forEach(([gov, cities]) => {
+    if (!gov) return;
+    output[gov] = output[gov] || {};
+    if (Array.isArray(cities)) {
+      cities.forEach(city => {
+        if (city) output[gov][city] = [];
+      });
+      return;
+    }
+    if (cities && typeof cities === "object") {
+      Object.keys(cities).forEach(city => {
+        if (city) output[gov][city] = [];
+      });
+    }
+  });
+  return output;
+}
+
+function flattenLocationsRows(tree = {}) {
+  const rows = [];
+  Object.entries(tree).forEach(([governorate, cities]) => {
+    Object.keys(cities || {}).forEach(city => {
+      rows.push({ governorate, city });
+    });
+  });
+  return rows;
+}
+
+function rowsToLocationsTree(rows = []) {
+  const tree = {};
+  rows.forEach(item => {
+    const governorate = (item?.governorate || "").trim();
+    const city = (item?.city || "").trim();
+    if (!governorate || !city) return;
+    if (!tree[governorate]) tree[governorate] = {};
+    tree[governorate][city] = [];
+  });
+  return tree;
+}
+
+async function loadLocationsFromDb() {
+  if (!window.supabaseClient) return null;
+  try {
+    const { data, error } = await window.supabaseClient
+      .from(LOCATIONS_TABLE)
+      .select("governorate, city")
+      .order("governorate", { ascending: true })
+      .order("city", { ascending: true });
+    if (error) throw error;
+    return rowsToLocationsTree(data || []);
+  } catch {
+    return null;
+  }
+}
+
+async function saveLocationsToDb(tree = locations) {
+  if (!window.supabaseClient) return;
+  const rows = flattenLocationsRows(tree);
+  try {
+    await window.supabaseClient.from(LOCATIONS_TABLE).delete().neq("governorate", "");
+    if (rows.length) {
+      await window.supabaseClient.from(LOCATIONS_TABLE).insert(rows);
+    }
+  } catch {
+    // keep local only
+  }
+}
+
+async function syncLocationsFromDb() {
+  const localLocations = normalizeLocationsShape(loadLocations());
+  const dbLocations = await loadLocationsFromDb();
+  if (dbLocations && Object.keys(dbLocations).length) {
+    locations = normalizeLocationsShape(dbLocations);
+    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
+    return;
+  }
+  locations = localLocations;
+  if (window.supabaseClient) {
+    await saveLocationsToDb(locations);
+  }
 }
 
 function toSpecialtyArray(value) {
@@ -2136,7 +2221,7 @@ function removeSpecialty() {
   logAction("تم حذف اختصاص");
 }
 
-function addGovernorate() {
+async function addGovernorate() {
   if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
@@ -2146,13 +2231,14 @@ function addGovernorate() {
   if (!locations[value]) {
     locations[value] = {};
     saveLocations();
+    await saveLocationsToDb(locations);
     logAction("تمت إضافة محافظة");
   }
   newGov.value = "";
   refreshLocationManagement();
 }
 
-function addCity() {
+async function addCity() {
   if (!(isSuperRole(currentUser) || isGovernorateManager(currentUser))) {
     alert("هذه العملية للمسؤول المخوّل فقط");
     return;
@@ -2169,12 +2255,13 @@ function addCity() {
   if (!locations[gov]) locations[gov] = {};
   if (!locations[gov][value]) locations[gov][value] = [];
   saveLocations();
+  await saveLocationsToDb(locations);
   logAction("تمت إضافة مدينة");
   newCity.value = "";
   refreshLocationManagement();
 }
 
-function removeGovernorate() {
+async function removeGovernorate() {
   if (!isSuperRole(currentUser)) {
     alert("هذه العملية للمسؤول المميز فقط");
     return;
@@ -2184,11 +2271,12 @@ function removeGovernorate() {
   if (!confirm("هل تريد حذف المحافظة بكل مدنها؟")) return;
   delete locations[gov];
   saveLocations();
+  await saveLocationsToDb(locations);
   logAction("تم حذف محافظة");
   refreshLocationManagement();
 }
 
-function removeCity() {
+async function removeCity() {
   if (!(isSuperRole(currentUser) || isGovernorateManager(currentUser))) {
     alert("هذه العملية للمسؤول المخوّل فقط");
     return;
@@ -2199,6 +2287,7 @@ function removeCity() {
   if (!confirm("هل تريد حذف المدينة بكل قراها؟")) return;
   delete locations[gov][cityVal];
   saveLocations();
+  await saveLocationsToDb(locations);
   logAction("تم حذف مدينة");
   refreshLocationManagement();
 }
@@ -2551,7 +2640,7 @@ async function bootApp() {
   if (logoutBtn) logoutBtn.hidden = false;
   setUserBadge();
 
-  locations = loadLocations();
+  await syncLocationsFromDb();
   specialties = loadSpecialties();
   places = (await loadPlacesFromDb()) || loadPlaces();
   reports = (await loadReportsFromDb()) || loadReports();
@@ -2750,7 +2839,7 @@ async function initAdminPage() {
   initIntlPhoneInputs();
   await syncUsersFromDb();
   ensureDefaultUser();
-  locations = loadLocations();
+  await syncLocationsFromDb();
   specialties = loadSpecialties();
   const session = loadSession();
   if (session) {

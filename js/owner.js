@@ -1,5 +1,6 @@
 const APPLICATIONS_KEY = "healthDutyApplications";
 const LOCATIONS_KEY = "healthDutyLocations";
+const LOCATIONS_TABLE = "managed_locations";
 const STORAGE_KEY = "places";
 const SPECIALTIES_KEY = "healthDutySpecialties";
 const THEME_KEY = "healthDutyTheme";
@@ -170,6 +171,18 @@ function buildLocationsFromPlaces(items = []) {
     map[gov][city] = [];
   });
   return map;
+}
+
+function rowsToLocationsTree(rows = []) {
+  const tree = {};
+  rows.forEach(item => {
+    const governorate = (item?.governorate || "").trim();
+    const city = (item?.city || "").trim();
+    if (!governorate || !city) return;
+    if (!tree[governorate]) tree[governorate] = {};
+    tree[governorate][city] = [];
+  });
+  return tree;
 }
 
 function initIntlPhoneInputs() {
@@ -492,6 +505,21 @@ async function loadPlacesFromDb() {
   }
 }
 
+async function loadLocationsFromDb() {
+  if (!window.supabaseClient) return null;
+  try {
+    const { data, error } = await window.supabaseClient
+      .from(LOCATIONS_TABLE)
+      .select("governorate, city")
+      .order("governorate", { ascending: true })
+      .order("city", { ascending: true });
+    if (error) throw error;
+    return rowsToLocationsTree(data || []);
+  } catch {
+    return null;
+  }
+}
+
 async function loadOwnerApplicationsFromDb(phone) {
   if (!window.supabaseClient || !phone) return null;
   try {
@@ -799,7 +827,8 @@ async function renderOwnerRequests() {
 }
 
 async function init() {
-  locations = normalizeLocationsShape(loadLocal(LOCATIONS_KEY, {}));
+  const remoteLocations = await loadLocationsFromDb();
+  locations = normalizeLocationsShape(remoteLocations || loadLocal(LOCATIONS_KEY, {}));
   const remotePlaces = await loadPlacesFromDb();
   places = remotePlaces || loadLocal(STORAGE_KEY, []);
   if (!Object.keys(locations).length) {
