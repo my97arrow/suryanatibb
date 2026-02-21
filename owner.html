@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>طلب اعتماد مكان طبي - نبض سوريا</title>
+  <title>طلب اعتماد - نبض سوريا</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.12.2/build/css/intlTelInput.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="owner-page">
@@ -18,7 +19,7 @@
       <div class="brand">
         <span class="brand-mark logo"><img src="images/NABDH-LOGO.png" alt="نبض سوريا"></span>
         <div>
-          <h1>طلب اعتماد مكان طبي</h1>
+          <h1>طلب اعتماد</h1>
           <p>أرسل بيانات مكانك الطبي وسيتم مراجعته من قبل المسؤول قبل النشر.</p>
         </div>
       </div>
@@ -206,10 +207,26 @@
     </section>
   </main>
 
+  <div class="modal" id="cropModal" aria-hidden="true">
+    <div class="modal-box modal-wide crop-box">
+      <h3>قص الصورة</h3>
+      <div class="crop-wrap">
+        <img id="cropImage" alt="معاينة قص الصورة">
+      </div>
+      <div class="crop-actions">
+        <button type="button" class="btn ghost" id="rotateLeft"><i class="fa-solid fa-rotate-left"></i> تدوير يسار</button>
+        <button type="button" class="btn ghost" id="rotateRight"><i class="fa-solid fa-rotate-right"></i> تدوير يمين</button>
+        <button type="button" class="btn ghost" id="cropCancel">إلغاء</button>
+        <button type="button" class="btn save" id="cropSave">اعتماد الصورة</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.12.2/build/js/intlTelInput.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/owner.js"></script>

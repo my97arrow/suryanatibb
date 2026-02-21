@@ -72,6 +72,12 @@ const notesInput = document.getElementById("notes");
 const imageInput = document.getElementById("image");
 const imageFileInput = document.getElementById("imageFile");
 const imagePreview = document.getElementById("imagePreview");
+const cropModal = document.getElementById("cropModal");
+const cropImage = document.getElementById("cropImage");
+const rotateLeft = document.getElementById("rotateLeft");
+const rotateRight = document.getElementById("rotateRight");
+const cropSave = document.getElementById("cropSave");
+const cropCancel = document.getElementById("cropCancel");
 const latInput = document.getElementById("lat");
 const lngInput = document.getElementById("lng");
 const workdaysAll = document.getElementById("workdaysAll");
@@ -89,6 +95,7 @@ let locations = {};
 let ownerPlaces = [];
 let map = null;
 let marker = null;
+let cropper = null;
 let loadPlacesTimer = null;
 let specialties = [];
 let selectedSpecialties = [];
@@ -451,12 +458,60 @@ function updateImagePreview(src) {
 function handleImageFile() {
   const file = imageFileInput?.files?.[0];
   if (!file) return;
+  if (!window.Cropper || !cropModal || !cropImage) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      imageInput.value = reader.result;
+      updateImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
   const reader = new FileReader();
   reader.onload = () => {
-    imageInput.value = reader.result;
-    updateImagePreview(reader.result);
+    cropModal.classList.add("active");
+    cropModal.setAttribute("aria-hidden", "false");
+    cropImage.src = reader.result || "";
+    cropImage.onload = () => {
+      if (cropper) cropper.destroy();
+      cropper = new Cropper(cropImage, {
+        aspectRatio: 1,
+        viewMode: 1,
+        autoCropArea: 1,
+        background: false,
+        movable: true,
+        zoomable: true,
+        rotatable: true,
+        scalable: false
+      });
+    };
   };
   reader.readAsDataURL(file);
+}
+
+function closeCropModal() {
+  if (!cropModal) return;
+  cropModal.classList.remove("active");
+  cropModal.setAttribute("aria-hidden", "true");
+  if (cropper) {
+    cropper.destroy();
+    cropper = null;
+  }
+  if (imageFileInput) imageFileInput.value = "";
+}
+
+function saveCroppedImage() {
+  if (!cropper) return;
+  const square = cropper.getCroppedCanvas({
+    width: 256,
+    height: 256,
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: "high"
+  });
+  const dataUrl = square.toDataURL("image/jpeg", 1);
+  imageInput.value = dataUrl;
+  updateImagePreview(dataUrl);
+  closeCropModal();
 }
 
 function populateSelect(select, values, firstLabel) {
@@ -885,6 +940,10 @@ if (trackPhone) {
 }
 if (imageInput) imageInput.addEventListener("input", () => updateImagePreview(imageInput.value.trim()));
 if (imageFileInput) imageFileInput.addEventListener("change", handleImageFile);
+if (rotateLeft) rotateLeft.addEventListener("click", () => cropper?.rotate(-90));
+if (rotateRight) rotateRight.addEventListener("click", () => cropper?.rotate(90));
+if (cropSave) cropSave.addEventListener("click", saveCroppedImage);
+if (cropCancel) cropCancel.addEventListener("click", closeCropModal);
 if (latInput) latInput.addEventListener("input", updateMarkerFromInputs);
 if (lngInput) lngInput.addEventListener("input", updateMarkerFromInputs);
 if (specialtySearch) {
