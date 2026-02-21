@@ -1,8 +1,30 @@
 const APPLICATIONS_KEY = "healthDutyApplications";
 const LOCATIONS_KEY = "healthDutyLocations";
 const STORAGE_KEY = "places";
+const SPECIALTIES_KEY = "healthDutySpecialties";
 const THEME_KEY = "healthDutyTheme";
 const WEEK_DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+const DEFAULT_SPECIALTIES = [
+  "قلبية",
+  "داخلية",
+  "هضمية",
+  "صدرية",
+  "كلوية",
+  "غدد",
+  "عصبية",
+  "جراحة عامة",
+  "عظمية",
+  "نسائية وتوليد",
+  "أطفال",
+  "أذن أنف حنجرة",
+  "جلدية",
+  "عيون",
+  "أسنان",
+  "أشعة",
+  "تحاليل مخبرية",
+  "إسعاف",
+  "لقاحات"
+];
 
 const ownerName = document.getElementById("ownerName");
 const ownerPhone = document.getElementById("ownerPhone");
@@ -47,6 +69,7 @@ let ownerPlaces = [];
 let map = null;
 let marker = null;
 let loadPlacesTimer = null;
+let specialties = [];
 const intlPhoneInstances = new Map();
 
 function normalize(value) {
@@ -140,6 +163,44 @@ function unique(items, keyGetter) {
     seen.add(key);
     return true;
   });
+}
+
+function parseSpecialtyList(value) {
+  if (Array.isArray(value)) return value.map(v => String(v || "").trim()).filter(Boolean);
+  return String(value || "")
+    .split(/[،,]/)
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
+function uniqueSpecialties(items) {
+  return [...new Set((items || []).map(v => String(v || "").trim()).filter(Boolean))];
+}
+
+function loadSpecialties() {
+  const local = loadLocal(SPECIALTIES_KEY, []);
+  const fromPlaces = (places || []).flatMap(place => parseSpecialtyList(place.specialty));
+  const list = uniqueSpecialties([...(Array.isArray(local) ? local : []), ...DEFAULT_SPECIALTIES, ...fromPlaces]);
+  saveLocal(SPECIALTIES_KEY, list);
+  return list;
+}
+
+function populateSpecialtySelect(selected = "") {
+  if (!specialtyInput) return;
+  specialtyInput.innerHTML = `<option value="">اختر الاختصاص</option>`;
+  specialties.forEach(value => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    specialtyInput.appendChild(option);
+  });
+  if (selected && !specialties.includes(selected)) {
+    const custom = document.createElement("option");
+    custom.value = selected;
+    custom.textContent = selected;
+    specialtyInput.appendChild(custom);
+  }
+  specialtyInput.value = selected || "";
 }
 
 function statusClass(status) {
@@ -399,7 +460,8 @@ function onExistingPlaceChange() {
   if (!place) return;
   nameInput.value = place.name || "";
   typeInput.value = place.type || "pharmacy";
-  specialtyInput.value = place.specialty || "";
+  const placeSpecialty = parseSpecialtyList(place.specialty)[0] || "";
+  populateSpecialtySelect(placeSpecialty);
   emailInput.value = place.email || "";
   governorateInput.value = place.governorate || "";
   updateCities();
@@ -596,8 +658,10 @@ async function init() {
   locations = loadLocal(LOCATIONS_KEY, {});
   const remotePlaces = await loadPlacesFromDb();
   places = remotePlaces || loadLocal(STORAGE_KEY, []);
+  specialties = loadSpecialties();
 
   populateSelect(governorateInput, Object.keys(locations), "اختر المحافظة");
+  populateSpecialtySelect();
   updateCities();
   fillHoursInputs("");
   setWorkdaysForm([]);
