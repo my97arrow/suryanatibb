@@ -1386,19 +1386,16 @@ body.admin {
     gap: 6px 8px;
   }
 
-  .action-group .btn {
+  .action-group .btn,
+  .header-actions .btn {
     width: 100%;
     padding: 6px 8px;
     font-size: 11px;
     gap: 4px;
     min-height: 34px;
     line-height: 1.1;
-    border-radius: 12px;
+    border-radius: 999px;
     justify-content: center;
-  }
-
-  .action-group .btn i {
-    font-size: 12px;
   }
 
   .header-actions {
@@ -1408,15 +1405,7 @@ body.admin {
     gap: 8px;
   }
 
-  .header-actions .btn {
-    flex: none;
-    padding: 6px 8px;
-    font-size: 11px;
-    gap: 4px;
-    min-height: 34px;
-    width: 100%;
-    justify-content: center;
-  }
+  .header-actions .btn { flex: none; }
 }
 
 @media (min-width: 681px) and (max-width: 980px) {
