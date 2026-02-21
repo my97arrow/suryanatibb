@@ -1721,6 +1721,20 @@ body.dark .gov-stats-list .rank {
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 16px;
   box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(14px);
+  animation: ownerPanelIn 0.55s ease forwards;
+}
+
+.owner-panel:nth-of-type(1) { animation-delay: 0.03s; }
+.owner-panel:nth-of-type(2) { animation-delay: 0.11s; }
+.owner-panel:nth-of-type(3) { animation-delay: 0.19s; }
+
+@keyframes ownerPanelIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .owner-panel-title {
@@ -1912,6 +1926,14 @@ body.dark.owner-page .owner-header-actions .btn.ghost {
   background: rgba(148, 163, 184, 0.16);
   border-color: rgba(148, 163, 184, 0.28);
   color: #e2e8f0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .owner-panel {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 body.dark .btn.ghost {
