@@ -25,6 +25,22 @@ const DEFAULT_SPECIALTIES = [
   "إسعاف",
   "لقاحات"
 ];
+const DEFAULT_LOCATIONS = {
+  "الرقة": { "الرقة": [], "الطبقة": [], "تل أبيض": [], "عين عيسى": [], "سلوك": [] },
+  "حلب": { "حلب": [], "اعزاز": [], "جرابلس": [], "عين العرب": [] },
+  "دمشق": { "دمشق": [] },
+  "ريف دمشق": { "دوما": [], "داريا": [], "يبرود": [] },
+  "حمص": { "حمص": [], "القصير": [], "تدمر": [] },
+  "حماة": { "حماة": [], "سلمية": [] },
+  "إدلب": { "إدلب": [], "معرة النعمان": [] },
+  "دير الزور": { "دير الزور": [], "البوكمال": [] },
+  "الحسكة": { "الحسكة": [], "القامشلي": [] },
+  "السويداء": { "السويداء": [] },
+  "درعا": { "درعا": [] },
+  "القنيطرة": { "القنيطرة": [] },
+  "طرطوس": { "طرطوس": [] },
+  "اللاذقية": { "اللاذقية": [] }
+};
 
 const ownerName = document.getElementById("ownerName");
 const ownerPhone = document.getElementById("ownerPhone");
@@ -122,6 +138,38 @@ function loadLocal(key, fallback) {
 
 function saveLocal(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function normalizeLocationsShape(input) {
+  const output = {};
+  Object.entries(input || {}).forEach(([gov, cities]) => {
+    if (!gov) return;
+    output[gov] = output[gov] || {};
+    if (Array.isArray(cities)) {
+      cities.forEach(city => {
+        if (city) output[gov][city] = [];
+      });
+      return;
+    }
+    if (cities && typeof cities === "object") {
+      Object.keys(cities).forEach(city => {
+        if (city) output[gov][city] = [];
+      });
+    }
+  });
+  return output;
+}
+
+function buildLocationsFromPlaces(items = []) {
+  const map = {};
+  items.forEach(place => {
+    const gov = (place?.governorate || "").trim();
+    const city = (place?.city || "").trim();
+    if (!gov || !city) return;
+    map[gov] = map[gov] || {};
+    map[gov][city] = [];
+  });
+  return map;
 }
 
 function initIntlPhoneInputs() {
@@ -751,9 +799,14 @@ async function renderOwnerRequests() {
 }
 
 async function init() {
-  locations = loadLocal(LOCATIONS_KEY, {});
+  locations = normalizeLocationsShape(loadLocal(LOCATIONS_KEY, {}));
   const remotePlaces = await loadPlacesFromDb();
   places = remotePlaces || loadLocal(STORAGE_KEY, []);
+  if (!Object.keys(locations).length) {
+    const fromPlaces = buildLocationsFromPlaces(places);
+    locations = Object.keys(fromPlaces).length ? fromPlaces : DEFAULT_LOCATIONS;
+    saveLocal(LOCATIONS_KEY, locations);
+  }
   specialties = loadSpecialties();
 
   populateSelect(governorateInput, Object.keys(locations), "اختر المحافظة");
