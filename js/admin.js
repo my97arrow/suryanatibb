@@ -1483,7 +1483,6 @@ function renderAdmin() {
   slice.forEach(place => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${isSuper ? `<input type="checkbox" class="row-check" data-index="${place._index}">` : ""}</td>
       <td>
         <strong>${place.name}</strong>
         <div class="muted">${place.specialty || "بدون اختصاص"}</div>
@@ -1491,8 +1490,6 @@ function renderAdmin() {
       <td>${typeLabel(place.type)}</td>
       <td>${place.governorate || ""}</td>
       <td>${place.city || ""}</td>
-      <td>${place.phone || ""}</td>
-      <td>${place.address || ""}</td>
       <td class="table-actions-cell">
         <div class="table-row-actions">
           ${canEdit() ? `
