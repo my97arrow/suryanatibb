@@ -243,10 +243,26 @@
         <label for="userCity">المدينة</label>
         <select id="userCity"></select>
       </div>
-      <button id="addUserBtn" class="btn primary" type="button">إضافة مستخدم</button>
-      <button id="updateUserBtn" class="btn ghost" type="button" hidden>تحديث بيانات</button>
+      <div class="user-form-actions">
+        <button id="addUserBtn" class="btn primary" type="button">إضافة مستخدم</button>
+        <button id="updateUserBtn" class="btn ghost" type="button" hidden>تحديث بيانات</button>
+      </div>
     </div>
-    <div id="usersList" class="user-list"></div>
+    <div class="table-wrap">
+      <table id="usersTable">
+        <thead>
+          <tr>
+            <th>اسم المستخدم</th>
+            <th>الدور</th>
+            <th>الهاتف</th>
+            <th>العنوان</th>
+            <th>النطاق</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </section>
 
   <section id="locationManagement" class="log-panel" data-view="locations" hidden>

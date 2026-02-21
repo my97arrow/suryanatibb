@@ -1954,6 +1954,7 @@ body.dark .section-divider {
 }
 
 #applicationsTable,
+#usersTable,
 #ownerRequestsTable {
   width: 100%;
   border-collapse: collapse;
@@ -1966,6 +1967,8 @@ body.dark .section-divider {
 #reportsTable td,
 #applicationsTable th,
 #applicationsTable td,
+#usersTable th,
+#usersTable td,
 #ownerRequestsTable th,
 #ownerRequestsTable td {
   text-align: right;
@@ -1977,6 +1980,7 @@ body.dark .section-divider {
 #adminTable thead th,
 #reportsTable thead th,
 #applicationsTable thead th,
+#usersTable thead th,
 #ownerRequestsTable thead th {
   background: rgba(14, 116, 144, 0.07);
   font-weight: 700;
@@ -1986,6 +1990,7 @@ body.dark .section-divider {
 #adminTable tbody tr:hover td,
 #reportsTable tbody tr:hover td,
 #applicationsTable tbody tr:hover td,
+#usersTable tbody tr:hover td,
 #ownerRequestsTable tbody tr:hover td {
   background: rgba(14, 116, 144, 0.05);
 }
@@ -2002,6 +2007,8 @@ body.dark #reportsTable th,
 body.dark #reportsTable td,
 body.dark #applicationsTable th,
 body.dark #applicationsTable td,
+body.dark #usersTable th,
+body.dark #usersTable td,
 body.dark #ownerRequestsTable th,
 body.dark #ownerRequestsTable td {
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
@@ -2015,6 +2022,7 @@ body.dark .table-wrap {
 body.dark #adminTable thead th,
 body.dark #reportsTable thead th,
 body.dark #applicationsTable thead th,
+body.dark #usersTable thead th,
 body.dark #ownerRequestsTable thead th {
   background: rgba(56, 189, 248, 0.16);
 }
@@ -2022,6 +2030,7 @@ body.dark #ownerRequestsTable thead th {
 body.dark #adminTable tbody tr:hover td,
 body.dark #reportsTable tbody tr:hover td,
 body.dark #applicationsTable tbody tr:hover td,
+body.dark #usersTable tbody tr:hover td,
 body.dark #ownerRequestsTable tbody tr:hover td {
   background: rgba(148, 163, 184, 0.12);
 }
@@ -2337,6 +2346,18 @@ body.dark #pharmacyTable td {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.user-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.user-form-actions .btn {
+  min-width: 160px;
 }
 
 .loc-actions {

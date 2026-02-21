@@ -254,7 +254,7 @@ const userGov = document.getElementById("userGov");
 const userCity = document.getElementById("userCity");
 const addUserBtn = document.getElementById("addUserBtn");
 const updateUserBtn = document.getElementById("updateUserBtn");
-const usersList = document.getElementById("usersList");
+const usersTable = document.getElementById("usersTable");
 
 const locationManagement = document.getElementById("locationManagement");
 const locGov = document.getElementById("locGov");
@@ -1710,8 +1710,10 @@ function clearAll() {
 }
 
 function renderUsers() {
-  if (!usersList) return;
-  usersList.innerHTML = "";
+  if (!usersTable) return;
+  const tbody = usersTable.querySelector("tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
   const filter = normalize(userFilter?.value || "");
   const users = loadUsers().filter(u => {
     if (u.role === "root") return false;
@@ -1719,9 +1721,15 @@ function renderUsers() {
     const hay = `${u.username} ${u.role} ${u.governorate || ""} ${u.city || ""} ${u.phone || ""}`.toLowerCase();
     return hay.includes(filter);
   });
+
+  if (!users.length) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td colspan="6" class="muted">لا يوجد مستخدمون مطابقون.</td>`;
+    tbody.appendChild(row);
+    return;
+  }
+
   users.forEach(user => {
-    const item = document.createElement("div");
-    item.className = "user-item";
     const scope = user.role === "root"
       ? "مسؤول أعلى"
       : user.role === "super"
@@ -1732,19 +1740,30 @@ function renderUsers() {
       ? `مدينة: ${user.city}`
       : "مشاهدة فقط";
     const roleClass = `role-${user.role || "viewer"}`;
-    item.innerHTML = `
-      <span><span class="role-pill ${roleClass}">${scope}</span> ${user.username}</span>
-      <span>${user.phone || ""}</span>
-      <span>${user.address || ""}</span>
-      <div>
-        <button class="btn ghost" data-edit="${user.username}">تعديل</button>
-        ${user.username === "admin" ? "" : `<button class="btn danger" data-user="${user.username}">إزالة</button>`}
-      </div>
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${user.username}</td>
+      <td><span class="role-pill ${roleClass}">${scope}</span></td>
+      <td>${user.phone || "-"}</td>
+      <td>${user.address || "-"}</td>
+      <td>${user.role === "governorate" ? (user.governorate || "-") : user.role === "city" ? `${user.governorate || "-"} / ${user.city || "-"}` : "-"}</td>
+      <td class="table-actions-cell">
+        <div class="table-row-actions">
+          <button class="table-icon-btn" type="button" data-edit="${user.username}" title="تعديل" aria-label="تعديل">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          ${user.username === "admin" ? "" : `
+            <button class="table-icon-btn danger" type="button" data-user="${user.username}" title="إزالة" aria-label="إزالة">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          `}
+        </div>
+      </td>
     `;
-    usersList.appendChild(item);
+    tbody.appendChild(row);
   });
 
-  usersList.querySelectorAll("[data-user]").forEach(btn => {
+  tbody.querySelectorAll("[data-user]").forEach(btn => {
     btn.addEventListener("click", () => {
       const users = loadUsers().filter(u => u.username !== btn.dataset.user);
       saveUsers(users);
@@ -1753,7 +1772,7 @@ function renderUsers() {
     });
   });
 
-  usersList.querySelectorAll("[data-edit]").forEach(btn => {
+  tbody.querySelectorAll("[data-edit]").forEach(btn => {
     btn.addEventListener("click", () => {
       const user = loadUsers().find(u => u.username === btn.dataset.edit);
       if (!user) return;
