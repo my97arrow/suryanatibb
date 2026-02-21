@@ -161,6 +161,19 @@ function normalizeLocationsShape(input) {
   return output;
 }
 
+function mergeLocationsTrees(...trees) {
+  const merged = {};
+  trees.forEach(tree => {
+    Object.entries(normalizeLocationsShape(tree)).forEach(([gov, cities]) => {
+      if (!merged[gov]) merged[gov] = {};
+      Object.keys(cities || {}).forEach(city => {
+        merged[gov][city] = [];
+      });
+    });
+  });
+  return merged;
+}
+
 function buildLocationsFromPlaces(items = []) {
   const map = {};
   items.forEach(place => {
@@ -827,15 +840,16 @@ async function renderOwnerRequests() {
 }
 
 async function init() {
+  const localLocations = normalizeLocationsShape(loadLocal(LOCATIONS_KEY, {}));
   const remoteLocations = await loadLocationsFromDb();
-  locations = normalizeLocationsShape(remoteLocations || loadLocal(LOCATIONS_KEY, {}));
   const remotePlaces = await loadPlacesFromDb();
   places = remotePlaces || loadLocal(STORAGE_KEY, []);
+  const fromPlaces = buildLocationsFromPlaces(places);
+  locations = mergeLocationsTrees(remoteLocations || {}, localLocations, fromPlaces);
   if (!Object.keys(locations).length) {
-    const fromPlaces = buildLocationsFromPlaces(places);
-    locations = Object.keys(fromPlaces).length ? fromPlaces : DEFAULT_LOCATIONS;
-    saveLocal(LOCATIONS_KEY, locations);
+    locations = DEFAULT_LOCATIONS;
   }
+  saveLocal(LOCATIONS_KEY, locations);
   specialties = loadSpecialties();
 
   populateSelect(governorateInput, Object.keys(locations), "اختر المحافظة");

@@ -378,6 +378,19 @@ function normalizeLocationsShape(input) {
   return output;
 }
 
+function mergeLocationsTrees(...trees) {
+  const merged = {};
+  trees.forEach(tree => {
+    Object.entries(normalizeLocationsShape(tree)).forEach(([gov, cities]) => {
+      if (!merged[gov]) merged[gov] = {};
+      Object.keys(cities || {}).forEach(city => {
+        merged[gov][city] = [];
+      });
+    });
+  });
+  return merged;
+}
+
 function flattenLocationsRows(tree = {}) {
   const rows = [];
   Object.entries(tree).forEach(([governorate, cities]) => {
@@ -431,15 +444,11 @@ async function saveLocationsToDb(tree = locations) {
 async function syncLocationsFromDb() {
   const localLocations = normalizeLocationsShape(loadLocations());
   const dbLocations = await loadLocationsFromDb();
-  if (dbLocations && Object.keys(dbLocations).length) {
-    locations = normalizeLocationsShape(dbLocations);
-    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
-    return;
-  }
-  locations = localLocations;
+  locations = mergeLocationsTrees(localLocations, dbLocations || {});
   if (window.supabaseClient) {
     await saveLocationsToDb(locations);
   }
+  localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
 }
 
 function toSpecialtyArray(value) {
