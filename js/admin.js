@@ -7,6 +7,7 @@ const BACKUP_KEY = "healthDutyBackups";
 const LOCATIONS_KEY = "healthDutyLocations";
 const SPECIALTIES_KEY = "healthDutySpecialties";
 const REPORTS_KEY = "healthDutyReports";
+const APPLICATIONS_KEY = "healthDutyApplications";
 function localISODate(d = new Date()) {
   const tz = d.getTimezoneOffset() * 60000;
   return new Date(d.getTime() - tz).toISOString().split("T")[0];
@@ -63,6 +64,7 @@ let specialties = [];
 let editingUser = null;
 let selectedSpecialties = [];
 let reports = [];
+let applications = [];
 
 const defaultLocations = {
   "الرقة": {
@@ -165,6 +167,11 @@ const reportsPanel = document.getElementById("reportsPanel");
 const reportsTable = document.getElementById("reportsTable");
 const reportsEmpty = document.getElementById("reportsEmpty");
 const reportFilterStatus = document.getElementById("reportFilterStatus");
+const applicationsPanel = document.getElementById("applicationsPanel");
+const applicationsTable = document.getElementById("applicationsTable");
+const applicationsEmpty = document.getElementById("applicationsEmpty");
+const applicationFilterStatus = document.getElementById("applicationFilterStatus");
+const applicationFilterType = document.getElementById("applicationFilterType");
 
 const PAGE_SIZE = 10;
 let adminPage = 1;
@@ -491,6 +498,46 @@ async function saveReportStatusToDb(report) {
 async function deleteReportFromDb(id) {
   if (!window.supabaseClient || !id) return;
   await window.supabaseClient.from("reports").delete().eq("id", id);
+}
+
+function loadApplications() {
+  try {
+    const raw = localStorage.getItem(APPLICATIONS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveApplications(list = applications) {
+  localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(list.slice(0, 3000)));
+}
+
+async function loadApplicationsFromDb() {
+  if (!window.supabaseClient) return null;
+  try {
+    const { data, error } = await window.supabaseClient
+      .from("place_applications")
+      .select("*")
+      .order("submitted_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch {
+    return null;
+  }
+}
+
+async function saveApplicationToDb(application) {
+  if (!window.supabaseClient || !application?.id) return;
+  await window.supabaseClient
+    .from("place_applications")
+    .update({
+      status: application.status,
+      review_note: application.review_note || "",
+      reviewed_by: currentUser?.username || "",
+      reviewed_at: new Date().toISOString()
+    })
+    .eq("id", application.id);
 }
 
 function saveLogs() {
@@ -1811,6 +1858,122 @@ function renderReports() {
   });
 }
 
+function applicationTypeLabel(type) {
+  return type === "update" ? "تعديل" : "إضافة";
+}
+
+function applicationStatusLabel(status) {
+  if (status === "approved") return "مقبول";
+  if (status === "rejected") return "مرفوض";
+  if (status === "needs_changes") return "يتطلب تعديل";
+  if (status === "in_review") return "قيد المراجعة";
+  return "معلق";
+}
+
+async function applyApprovedApplication(application) {
+  const payload = application?.payload || {};
+  if (!payload.name || !payload.type || !payload.governorate || !payload.city || !payload.lat || !payload.lng) {
+    throw new Error("missing required payload");
+  }
+
+  if (application.type === "update") {
+    let idx = places.findIndex(p => p.id && application.place_id && p.id === application.place_id);
+    if (idx === -1) {
+      idx = places.findIndex(p =>
+        normalize(p.name) === normalize(payload.name) &&
+        normalize(p.governorate) === normalize(payload.governorate) &&
+        normalize(p.city) === normalize(payload.city)
+      );
+    }
+    if (idx === -1) throw new Error("target place not found");
+    const merged = { ...places[idx], ...payload };
+    const placeId = places[idx]?.id || null;
+    const savedId = await savePlaceToDb(merged, placeId);
+    places[idx] = { ...merged, id: savedId || placeId };
+  } else {
+    const savedId = await savePlaceToDb(payload, null);
+    places.push({ ...payload, id: savedId || null });
+  }
+  savePlaces();
+}
+
+function renderApplications() {
+  if (!applicationsTable) return;
+  const tbody = applicationsTable.querySelector("tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  const statusFilter = applicationFilterStatus?.value || "all";
+  const typeFilter = applicationFilterType?.value || "all";
+  const list = applications
+    .filter(a => statusFilter === "all" || (a.status || "pending") === statusFilter)
+    .filter(a => typeFilter === "all" || (a.type || "create") === typeFilter);
+
+  if (!list.length) {
+    if (applicationsEmpty) applicationsEmpty.hidden = false;
+    return;
+  }
+  if (applicationsEmpty) applicationsEmpty.hidden = true;
+
+  list.forEach((app, index) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${applicationTypeLabel(app.type || "create")}</td>
+      <td>${app.payload?.name || "-"}</td>
+      <td>${app.submitted_by_name || "-"}<br><span class="muted">${app.submitted_by_phone || ""}</span></td>
+      <td>${applicationStatusLabel(app.status || "pending")}</td>
+      <td>${app.submitted_at ? new Date(app.submitted_at).toLocaleString("ar") : "-"}</td>
+      <td>
+        <button class="btn ghost" data-app-status="${index}" data-next="in_review">مراجعة</button>
+        <button class="btn primary" data-app-status="${index}" data-next="approved">قبول</button>
+        <button class="btn danger" data-app-status="${index}" data-next="rejected">رفض</button>
+        <button class="btn ghost" data-app-status="${index}" data-next="needs_changes">طلب تعديل</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  tbody.querySelectorAll("[data-app-status]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const idx = Number(btn.dataset.appStatus);
+      const next = btn.dataset.next || "in_review";
+      const app = list[idx];
+      if (!app) return;
+      const appIdx = applications.findIndex(a => a === app || (a.id && app.id && a.id === app.id) || (a.local_id && app.local_id && a.local_id === app.local_id));
+      if (appIdx === -1) return;
+
+      let reviewNote = "";
+      if (next === "rejected" || next === "needs_changes") {
+        reviewNote = prompt("أدخل سبب القرار:", app.review_note || "") || "";
+      }
+
+      try {
+        if (next === "approved") {
+          await applyApprovedApplication(app);
+        }
+        applications[appIdx] = {
+          ...applications[appIdx],
+          status: next,
+          review_note: reviewNote,
+          reviewed_by: currentUser?.username || "",
+          reviewed_at: new Date().toISOString()
+        };
+        saveApplications();
+        try {
+          await saveApplicationToDb(applications[appIdx]);
+        } catch {
+          // keep local
+        }
+        logAction(`تحديث طلب ${app.payload?.name || ""} إلى ${applicationStatusLabel(next)}`);
+        renderApplications();
+        renderAdmin();
+      } catch {
+        alert("تعذر تطبيق الطلب، تحقق من البيانات المطلوبة");
+      }
+    });
+  });
+}
+
 function updateToolbarByRole() {
   const buttons = document.querySelectorAll(".admin-toolbar button");
   buttons.forEach(btn => {
@@ -1860,6 +2023,7 @@ async function bootApp() {
   specialties = loadSpecialties();
   places = (await loadPlacesFromDb()) || loadPlaces();
   reports = (await loadReportsFromDb()) || loadReports();
+  applications = (await loadApplicationsFromDb()) || loadApplications();
   specialties = uniqueSpecialties([
     ...specialties,
     ...places.flatMap(place => toSpecialtyArray(place.specialty))
@@ -1885,10 +2049,13 @@ async function bootApp() {
     refreshSpecialtyManagement();
     if (reportsPanel) reportsPanel.hidden = false;
     renderReports();
+    if (applicationsPanel) applicationsPanel.hidden = false;
+    renderApplications();
   } else {
     if (userManagement) userManagement.hidden = true;
     if (locationManagement) locationManagement.hidden = true;
     if (reportsPanel) reportsPanel.hidden = true;
+    if (applicationsPanel) applicationsPanel.hidden = true;
   }
 
   populateSelect(governorate, Object.keys(locations), "اختر المحافظة");
@@ -1951,6 +2118,8 @@ if (addCityBtn) addCityBtn.addEventListener("click", addCity);
 if (removeGovBtn) removeGovBtn.addEventListener("click", removeGovernorate);
 if (removeCityBtn) removeCityBtn.addEventListener("click", removeCity);
 if (reportFilterStatus) reportFilterStatus.addEventListener("change", renderReports);
+if (applicationFilterStatus) applicationFilterStatus.addEventListener("change", renderApplications);
+if (applicationFilterType) applicationFilterType.addEventListener("change", renderApplications);
 if (addSpecialtyBtn) addSpecialtyBtn.addEventListener("click", addSpecialty);
 if (removeSpecialtyBtn) removeSpecialtyBtn.addEventListener("click", removeSpecialty);
 if (newSpecialty) {

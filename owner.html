@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>طلب اعتماد مكان طبي - نبض سوريا</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <header class="site-header compact">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-mark logo"><img src="images/NABDH-LOGO.png" alt="نبض سوريا"></span>
+        <div>
+          <h1>طلب اعتماد مكان طبي</h1>
+          <p>أرسل بيانات مكانك الطبي وسيتم مراجعته من قبل المسؤول قبل النشر.</p>
+        </div>
+      </div>
+      <a class="btn ghost" href="index.html">العودة للموقع</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="log-panel">
+      <h3>بيانات صاحب الطلب</h3>
+      <div class="user-form">
+        <div class="field">
+          <label for="ownerName">الاسم</label>
+          <input id="ownerName" placeholder="اسم صاحب المكان">
+        </div>
+        <div class="field">
+          <label for="ownerPhone">رقم الهاتف</label>
+          <input id="ownerPhone" placeholder="+905XXXXXXXXX">
+        </div>
+        <div class="field">
+          <label for="ownerEmail">البريد الإلكتروني (اختياري)</label>
+          <input id="ownerEmail" placeholder="name@example.com">
+        </div>
+        <div class="field">
+          <label for="requestType">نوع الطلب</label>
+          <select id="requestType">
+            <option value="create">إضافة مكان جديد</option>
+            <option value="update">تعديل مكان موجود</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="existingPlace">المكان المراد تعديله</label>
+          <select id="existingPlace">
+            <option value="">اختر المكان (لتعديل فقط)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="log-panel">
+      <h3>بيانات المكان الطبي</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label for="name">اسم المكان</label>
+          <input id="name">
+        </div>
+        <div class="field">
+          <label for="type">النوع</label>
+          <select id="type">
+            <option value="pharmacy">صيدلية</option>
+            <option value="hospital">مشفى</option>
+            <option value="dispensary">مستوصف</option>
+            <option value="clinic">عيادة</option>
+            <option value="lab">مخبر طبي</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="specialty">الاختصاص</label>
+          <input id="specialty" placeholder="مثال: قلبية، أطفال">
+        </div>
+        <div class="field">
+          <label for="governorate">المحافظة</label>
+          <select id="governorate"></select>
+        </div>
+        <div class="field">
+          <label for="city">المدينة</label>
+          <select id="city"></select>
+        </div>
+        <div class="field">
+          <label for="address">العنوان</label>
+          <input id="address">
+        </div>
+        <div class="field">
+          <label for="phone">هاتف المكان</label>
+          <input id="phone">
+        </div>
+        <div class="field">
+          <label for="whatsapp">واتساب المكان</label>
+          <input id="whatsapp">
+        </div>
+        <div class="field">
+          <label for="lat">خط العرض</label>
+          <input id="lat" type="number" step="0.000001">
+        </div>
+        <div class="field">
+          <label for="lng">خط الطول</label>
+          <input id="lng" type="number" step="0.000001">
+        </div>
+        <div class="field span-2">
+          <label for="ownerNote">ملاحظة للمراجعة (اختياري)</label>
+          <input id="ownerNote" placeholder="أي معلومة تساعد على التحقق من الطلب">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="submitApplication" class="save" type="button">إرسال الطلب</button>
+      </div>
+    </section>
+
+    <section class="log-panel">
+      <h3>تتبع طلباتك</h3>
+      <div class="controls">
+        <div class="field">
+          <label for="trackPhone">رقم الهاتف</label>
+          <input id="trackPhone" placeholder="أدخل نفس رقم الهاتف">
+        </div>
+        <div class="field action-field">
+          <label>&nbsp;</label>
+          <button id="trackBtn" class="btn ghost" type="button">عرض طلباتي</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="ownerRequestsTable">
+          <thead>
+            <tr>
+              <th>نوع الطلب</th>
+              <th>اسم المكان</th>
+              <th>الحالة</th>
+              <th>ملاحظة المراجع</th>
+              <th>التاريخ</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/owner.js"></script>
+</body>
+</html>
