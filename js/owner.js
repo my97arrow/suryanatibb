@@ -36,6 +36,10 @@ const existingPlace = document.getElementById("existingPlace");
 const nameInput = document.getElementById("name");
 const typeInput = document.getElementById("type");
 const specialtyInput = document.getElementById("specialty");
+const specialtyField = document.getElementById("specialtyMulti");
+const specialtySearch = document.getElementById("specialtySearch");
+const specialtyChips = document.getElementById("specialtyChips");
+const specialtySuggestions = document.getElementById("specialtySuggestions");
 const emailInput = document.getElementById("email");
 const governorateInput = document.getElementById("governorate");
 const cityInput = document.getElementById("city");
@@ -70,6 +74,7 @@ let map = null;
 let marker = null;
 let loadPlacesTimer = null;
 let specialties = [];
+let selectedSpecialties = [];
 const intlPhoneInstances = new Map();
 
 function normalize(value) {
@@ -165,42 +170,115 @@ function unique(items, keyGetter) {
   });
 }
 
-function parseSpecialtyList(value) {
-  if (Array.isArray(value)) return value.map(v => String(v || "").trim()).filter(Boolean);
-  return String(value || "")
-    .split(/[،,]/)
-    .map(v => v.trim())
+function toSpecialtyArray(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(item => `${item}`.trim()).filter(Boolean);
+  return `${value}`
+    .split(/[،,|]/)
+    .map(item => item.trim())
     .filter(Boolean);
 }
 
-function uniqueSpecialties(items) {
-  return [...new Set((items || []).map(v => String(v || "").trim()).filter(Boolean))];
+function normalizeSpecialty(value) {
+  return (value || "").toString().trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function uniqueSpecialties(list) {
+  const map = new Map();
+  (list || []).forEach(item => {
+    const clean = `${item || ""}`.trim();
+    const key = normalizeSpecialty(clean);
+    if (clean && !map.has(key)) map.set(key, clean);
+  });
+  return [...map.values()].sort((a, b) => a.localeCompare(b, "ar"));
 }
 
 function loadSpecialties() {
   const local = loadLocal(SPECIALTIES_KEY, []);
-  const fromPlaces = (places || []).flatMap(place => parseSpecialtyList(place.specialty));
+  const fromPlaces = (places || []).flatMap(place => toSpecialtyArray(place.specialty));
   const list = uniqueSpecialties([...(Array.isArray(local) ? local : []), ...DEFAULT_SPECIALTIES, ...fromPlaces]);
   saveLocal(SPECIALTIES_KEY, list);
   return list;
 }
 
-function populateSpecialtySelect(selected = "") {
+function syncSpecialtyValue() {
   if (!specialtyInput) return;
-  specialtyInput.innerHTML = `<option value="">اختر الاختصاص</option>`;
-  specialties.forEach(value => {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = value;
-    specialtyInput.appendChild(option);
+  specialtyInput.value = selectedSpecialties.join("، ");
+}
+
+function renderSpecialtyChips() {
+  if (!specialtyChips) return;
+  specialtyChips.innerHTML = "";
+  selectedSpecialties.forEach(item => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "multi-chip";
+    chip.innerHTML = `${item} <i class="fa-solid fa-xmark"></i>`;
+    chip.addEventListener("click", () => {
+      selectedSpecialties = selectedSpecialties.filter(v => normalizeSpecialty(v) !== normalizeSpecialty(item));
+      syncSpecialtyValue();
+      renderSpecialtyChips();
+      renderSpecialtySuggestions(specialtySearch?.value || "");
+    });
+    specialtyChips.appendChild(chip);
   });
-  if (selected && !specialties.includes(selected)) {
-    const custom = document.createElement("option");
-    custom.value = selected;
-    custom.textContent = selected;
-    specialtyInput.appendChild(custom);
+}
+
+function addSpecialtyToSelection(value) {
+  const clean = `${value || ""}`.trim();
+  if (!clean) return;
+  const normalized = normalizeSpecialty(clean);
+  const matched = specialties.find(item => normalizeSpecialty(item) === normalized);
+  if (!matched) {
+    showToast("هذا الاختصاص غير موجود ضمن القائمة");
+    return;
   }
-  specialtyInput.value = selected || "";
+  const exists = selectedSpecialties.some(v => normalizeSpecialty(v) === normalized);
+  if (!exists) selectedSpecialties.push(matched);
+  syncSpecialtyValue();
+  renderSpecialtyChips();
+  renderSpecialtySuggestions("");
+  if (specialtySearch) specialtySearch.value = "";
+}
+
+function setSpecialtiesForm(value) {
+  selectedSpecialties = uniqueSpecialties(toSpecialtyArray(value));
+  syncSpecialtyValue();
+  renderSpecialtyChips();
+  renderSpecialtySuggestions("");
+}
+
+function renderSpecialtySuggestions(query = "") {
+  if (!specialtySuggestions) return;
+  const q = normalizeSpecialty(query);
+  const selectedKeys = new Set(selectedSpecialties.map(item => normalizeSpecialty(item)));
+  const list = specialties.filter(item => {
+    const key = normalizeSpecialty(item);
+    if (selectedKeys.has(key)) return false;
+    if (!q) return true;
+    return key.includes(q);
+  }).slice(0, 10);
+
+  specialtySuggestions.innerHTML = "";
+  if (!list.length) {
+    specialtySuggestions.hidden = true;
+    return;
+  }
+
+  list.forEach(item => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "multi-suggestion";
+    btn.textContent = item;
+    btn.addEventListener("click", () => addSpecialtyToSelection(item));
+    specialtySuggestions.appendChild(btn);
+  });
+  specialtySuggestions.hidden = false;
+}
+
+function initSpecialtyField() {
+  if (!specialtyInput) return;
+  setSpecialtiesForm([]);
 }
 
 function statusClass(status) {
@@ -424,7 +502,7 @@ function fillExistingPlaces() {
 function clearPlaceForm() {
   nameInput.value = "";
   typeInput.value = "pharmacy";
-  specialtyInput.value = "";
+  setSpecialtiesForm([]);
   emailInput.value = "";
   governorateInput.value = "";
   updateCities();
@@ -460,8 +538,7 @@ function onExistingPlaceChange() {
   if (!place) return;
   nameInput.value = place.name || "";
   typeInput.value = place.type || "pharmacy";
-  const placeSpecialty = parseSpecialtyList(place.specialty)[0] || "";
-  populateSpecialtySelect(placeSpecialty);
+  setSpecialtiesForm(place.specialty || "");
   emailInput.value = place.email || "";
   governorateInput.value = place.governorate || "";
   updateCities();
@@ -661,7 +738,7 @@ async function init() {
   specialties = loadSpecialties();
 
   populateSelect(governorateInput, Object.keys(locations), "اختر المحافظة");
-  populateSpecialtySelect();
+  initSpecialtyField();
   updateCities();
   fillHoursInputs("");
   setWorkdaysForm([]);
@@ -695,6 +772,21 @@ if (imageInput) imageInput.addEventListener("input", () => updateImagePreview(im
 if (imageFileInput) imageFileInput.addEventListener("change", handleImageFile);
 if (latInput) latInput.addEventListener("input", updateMarkerFromInputs);
 if (lngInput) lngInput.addEventListener("input", updateMarkerFromInputs);
+if (specialtySearch) {
+  specialtySearch.addEventListener("focus", () => renderSpecialtySuggestions(specialtySearch.value));
+  specialtySearch.addEventListener("input", () => renderSpecialtySuggestions(specialtySearch.value));
+  specialtySearch.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addSpecialtyToSelection(specialtySearch.value);
+  });
+}
+document.addEventListener("click", event => {
+  if (!specialtySuggestions || !specialtyField) return;
+  if (specialtyField.contains(event.target)) return;
+  if (specialtySuggestions.contains(event.target)) return;
+  specialtySuggestions.hidden = true;
+});
 if (hours24) {
   hours24.addEventListener("change", () => {
     if (hours24.checked) {

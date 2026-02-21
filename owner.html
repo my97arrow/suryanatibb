@@ -35,7 +35,7 @@
     <section class="log-panel owner-panel">
       <h3 class="owner-panel-title"><i class="fa-solid fa-user-pen"></i> بيانات صاحب الطلب</h3>
       <div class="user-form">
-        <div class="field">
+        <div class="field" id="specialtyField">
           <label for="ownerName">الاسم</label>
           <input id="ownerName" placeholder="اسم صاحب المكان">
         </div>
@@ -82,9 +82,12 @@
         </div>
         <div class="field">
           <label for="specialty">الاختصاص</label>
-          <select id="specialty">
-            <option value="">اختر الاختصاص</option>
-          </select>
+          <input id="specialty" type="hidden">
+          <div class="multi-select" id="specialtyMulti">
+            <div id="specialtyChips" class="multi-chips"></div>
+            <input id="specialtySearch" placeholder="ابحث واختر اختصاص من القائمة">
+          </div>
+          <div id="specialtySuggestions" class="multi-suggestions" hidden></div>
         </div>
         <div class="field">
           <label for="email">البريد الإلكتروني (اختياري)</label>
