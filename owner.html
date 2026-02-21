@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.12.2/build/css/intlTelInput.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -35,7 +36,7 @@
         </div>
         <div class="field">
           <label for="ownerPhone">رقم الهاتف</label>
-          <input id="ownerPhone" placeholder="+905XXXXXXXXX">
+          <input id="ownerPhone" data-intl-phone placeholder="+905XXXXXXXXX">
         </div>
         <div class="field">
           <label for="ownerEmail">البريد الإلكتروني (اختياري)</label>
@@ -96,11 +97,11 @@
         </div>
         <div class="field">
           <label for="phone">هاتف المكان</label>
-          <input id="phone">
+          <input id="phone" data-intl-phone>
         </div>
         <div class="field">
           <label for="whatsapp">واتساب المكان</label>
-          <input id="whatsapp">
+          <input id="whatsapp" data-intl-phone>
         </div>
         <div class="field">
           <label>ساعات العمل (اختياري)</label>
@@ -198,6 +199,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.12.2/build/js/intlTelInput.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/owner.js"></script>

@@ -267,6 +267,24 @@ select:focus {
   color: var(--ink);
 }
 
+.iti {
+  width: 100%;
+}
+
+.iti input {
+  width: 100%;
+  direction: ltr;
+  text-align: left;
+}
+
+.iti__country-container {
+  direction: ltr;
+}
+
+.iti__dropdown-content {
+  z-index: 10000;
+}
+
 .btn.danger {
   background: linear-gradient(135deg, #f87171, #ef4444);
   color: #fff;

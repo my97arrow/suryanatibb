@@ -262,6 +262,46 @@ const specialtySelect = document.getElementById("specialtySelect");
 const newSpecialty = document.getElementById("newSpecialty");
 const addSpecialtyBtn = document.getElementById("addSpecialtyBtn");
 const removeSpecialtyBtn = document.getElementById("removeSpecialtyBtn");
+const intlPhoneInstances = new Map();
+
+function initIntlPhoneInputs() {
+  if (!window.intlTelInput) return;
+  [phone, whatsapp, userPhone]
+    .filter(Boolean)
+    .forEach(input => {
+      if (intlPhoneInstances.has(input)) return;
+      const iti = window.intlTelInput(input, {
+        initialCountry: "sy",
+        separateDialCode: true,
+        nationalMode: false,
+        preferredCountries: ["sy", "tr", "sa", "iq", "ae"]
+      });
+      intlPhoneInstances.set(input, iti);
+    });
+}
+
+function getIntlPhoneValue(input) {
+  if (!input) return "";
+  const iti = intlPhoneInstances.get(input);
+  if (!iti) return input.value.trim();
+  const full = iti.getNumber();
+  return (full || input.value || "").trim();
+}
+
+function setIntlPhoneValue(input, value) {
+  if (!input) return;
+  const iti = intlPhoneInstances.get(input);
+  const safeValue = (value || "").toString();
+  if (!iti || !safeValue) {
+    input.value = safeValue;
+    return;
+  }
+  try {
+    iti.setNumber(safeValue);
+  } catch {
+    input.value = safeValue;
+  }
+}
 
 function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
@@ -1155,8 +1195,8 @@ function fillForm(i) {
   type.value = place.type || "";
   toggleSpecialty();
   setSpecialtiesForm(place.specialty || "");
-  phone.value = place.phone || "";
-  whatsapp.value = place.whatsapp || "";
+  setIntlPhoneValue(phone, place.phone || "");
+  setIntlPhoneValue(whatsapp, place.whatsapp || "");
   email.value = place.email || "";
   address.value = place.address || "";
   hours.value = place.hours || "";
@@ -1329,8 +1369,8 @@ function savePlace() {
     name: name.value.trim(),
     type: type.value,
     specialty: (type.value === "clinic" || type.value === "lab" || type.value === "hospital" || type.value === "dispensary") ? specialty.value.trim() : "",
-    phone: phone.value.trim(),
-    whatsapp: whatsapp.value.trim(),
+    phone: getIntlPhoneValue(phone),
+    whatsapp: getIntlPhoneValue(whatsapp),
     email: email.value.trim(),
     governorate: governorate.value.trim(),
     city: city.value.trim(),
@@ -1683,7 +1723,7 @@ function renderUsers() {
       editingUser = user.username;
       userName.value = user.username;
       userPass.value = user.password;
-      userPhone.value = user.phone || "";
+      setIntlPhoneValue(userPhone, user.phone || "");
       userAddress.value = user.address || "";
       userRole.value = user.role || "viewer";
       populateUserScopeOptions();
@@ -1702,7 +1742,7 @@ function addUser() {
   const role = userRole?.value || "super";
   const gov = userGov?.value || "";
   const cityVal = userCity?.value || "";
-  const phone = userPhone?.value || "";
+  const phone = getIntlPhoneValue(userPhone);
   const addressVal = userAddress?.value || "";
 
   if (!username || !password) {
@@ -1729,7 +1769,7 @@ function addUser() {
 
   userName.value = "";
   userPass.value = "";
-  userPhone.value = "";
+  setIntlPhoneValue(userPhone, "");
   userAddress.value = "";
 }
 
@@ -1745,7 +1785,7 @@ function updateUser() {
     role: userRole?.value || users[idx].role,
     governorate: userGov?.value || "",
     city: userCity?.value || "",
-    phone: userPhone?.value || "",
+    phone: getIntlPhoneValue(userPhone),
     address: userAddress?.value || ""
   };
   saveUsers(users);
@@ -1757,7 +1797,7 @@ function updateUser() {
   updateUserBtn.hidden = true;
   userName.value = "";
   userPass.value = "";
-  userPhone.value = "";
+  setIntlPhoneValue(userPhone, "");
   userAddress.value = "";
 }
 
@@ -2400,6 +2440,7 @@ if (hours24) {
   });
 }
 
+initIntlPhoneInputs();
 ensureDefaultUser();
 locations = loadLocations();
 specialties = loadSpecialties();

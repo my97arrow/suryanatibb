@@ -11,6 +11,7 @@
 
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.12.2/build/css/intlTelInput.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
@@ -213,7 +214,7 @@
       </div>
       <div class="field">
         <label for="userPhone">رقم الهاتف</label>
-        <input id="userPhone" placeholder="رقم الهاتف">
+        <input id="userPhone" data-intl-phone placeholder="رقم الهاتف">
       </div>
       <div class="field">
         <label for="userAddress">العنوان</label>
@@ -406,11 +407,11 @@
       </div>
       <div class="field">
         <label for="phone">الهاتف</label>
-        <input id="phone" placeholder="مثال: 0999999999">
+        <input id="phone" data-intl-phone placeholder="مثال: 0999999999">
       </div>
       <div class="field">
         <label for="whatsapp">واتساب (اختياري)</label>
-        <input id="whatsapp" placeholder="مثال: 963999999999">
+        <input id="whatsapp" data-intl-phone placeholder="مثال: 963999999999">
       </div>
       <div class="field">
         <label for="email">البريد الإلكتروني (اختياري)</label>
@@ -513,6 +514,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.12.2/build/js/intlTelInput.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/dist/umd/supabase.min.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/admin.js"></script>

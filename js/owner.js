@@ -45,6 +45,7 @@ let ownerPlaces = [];
 let map = null;
 let marker = null;
 let loadPlacesTimer = null;
+const intlPhoneInstances = new Map();
 
 function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
@@ -73,6 +74,45 @@ function loadLocal(key, fallback) {
 
 function saveLocal(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function initIntlPhoneInputs() {
+  if (!window.intlTelInput) return;
+  [ownerPhone, phoneInput, whatsappInput]
+    .filter(Boolean)
+    .forEach(input => {
+      if (intlPhoneInstances.has(input)) return;
+      const iti = window.intlTelInput(input, {
+        initialCountry: "sy",
+        separateDialCode: true,
+        nationalMode: false,
+        preferredCountries: ["sy", "tr", "sa", "iq", "ae"]
+      });
+      intlPhoneInstances.set(input, iti);
+    });
+}
+
+function getIntlPhoneValue(input) {
+  if (!input) return "";
+  const iti = intlPhoneInstances.get(input);
+  if (!iti) return input.value.trim();
+  const full = iti.getNumber();
+  return (full || input.value || "").trim();
+}
+
+function setIntlPhoneValue(input, value) {
+  if (!input) return;
+  const iti = intlPhoneInstances.get(input);
+  const safeValue = (value || "").toString();
+  if (!iti || !safeValue) {
+    input.value = safeValue;
+    return;
+  }
+  try {
+    iti.setNumber(safeValue);
+  } catch {
+    input.value = safeValue;
+  }
 }
 
 function unique(items, keyGetter) {
@@ -312,8 +352,8 @@ function clearPlaceForm() {
   updateCities();
   cityInput.value = "";
   addressInput.value = "";
-  phoneInput.value = "";
-  whatsappInput.value = "";
+  setIntlPhoneValue(phoneInput, "");
+  setIntlPhoneValue(whatsappInput, "");
   if (hoursInput) hoursInput.value = "";
   fillHoursInputs("");
   setWorkdaysForm([]);
@@ -348,8 +388,8 @@ function onExistingPlaceChange() {
   updateCities();
   cityInput.value = place.city || "";
   addressInput.value = place.address || "";
-  phoneInput.value = place.phone || "";
-  whatsappInput.value = place.whatsapp || "";
+  setIntlPhoneValue(phoneInput, place.phone || "");
+  setIntlPhoneValue(whatsappInput, place.whatsapp || "");
   fillHoursInputs(place.hours || "");
   setWorkdaysForm(place.workdays || []);
   servicesInput.value = place.services || "";
@@ -363,7 +403,7 @@ function onExistingPlaceChange() {
 
 async function refreshOwnerPlacesByPhone() {
   if ((requestType?.value || "create") !== "update") return;
-  const phone = ownerPhone?.value.trim();
+  const phone = getIntlPhoneValue(ownerPhone);
   if (!phone) {
     ownerPlaces = [];
     fillExistingPlaces();
@@ -403,7 +443,7 @@ function syncUpdateMode() {
 }
 
 function validateForm() {
-  if (!ownerName.value.trim() || !ownerPhone.value.trim()) {
+  if (!ownerName.value.trim() || !getIntlPhoneValue(ownerPhone)) {
     showToast("يرجى إدخال بيانات صاحب الطلب");
     return false;
   }
@@ -440,8 +480,8 @@ function buildPayload() {
     governorate: governorateInput.value,
     city: cityInput.value,
     address: addressInput.value.trim(),
-    phone: phoneInput.value.trim(),
-    whatsapp: whatsappInput.value.trim(),
+    phone: getIntlPhoneValue(phoneInput),
+    whatsapp: getIntlPhoneValue(whatsappInput),
     hours,
     workdays: getWorkdaysFromForm(),
     services: servicesInput.value.trim(),
@@ -473,7 +513,7 @@ async function submitApplication() {
     place_id: placeId,
     payload: buildPayload(),
     submitted_by_name: ownerName.value.trim(),
-    submitted_by_phone: ownerPhone.value.trim(),
+    submitted_by_phone: getIntlPhoneValue(ownerPhone),
     submitted_by_email: ownerEmail.value.trim(),
     owner_note: ownerNote.value.trim(),
     submitted_at: new Date().toISOString(),
@@ -497,7 +537,7 @@ async function submitApplication() {
     showToast("تم الحفظ محلياً فقط، تحقق من الاتصال");
   }
 
-  trackPhone.value = ownerPhone.value.trim();
+  trackPhone.value = getIntlPhoneValue(ownerPhone);
   await renderOwnerRequests();
 }
 
@@ -594,5 +634,6 @@ workdaysInputs.forEach(input => {
   input.addEventListener("change", syncWorkdaysAll);
 });
 
+initIntlPhoneInputs();
 clearPlaceForm();
 init();
