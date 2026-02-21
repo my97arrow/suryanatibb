@@ -173,8 +173,15 @@ function renderDetail(place) {
 
     <div class="detail-grid">
       <div class="detail-info">
+        <h3>حالة التوثيق</h3>
+        <p>${place.verified ? "موثّق" : "غير موثّق"}</p>
+        ${place.verified_by ? `<p class="muted">بواسطة: ${place.verified_by}</p>` : ""}
+        ${place.verified_at ? `<p class="muted">بتاريخ: ${new Date(place.verified_at).toLocaleDateString("ar")}</p>` : ""}
+      </div>
+      <div class="detail-info">
         <h3>جودة البيانات</h3>
         <p>مستوى الجودة: ${quality.label} (${quality.score}%)</p>
+        ${place.updated_at ? `<p class="muted">آخر تحديث: ${new Date(place.updated_at).toLocaleDateString("ar")}</p>` : ""}
       </div>
       <div class="detail-info">
         <h3>الاختصاص</h3>

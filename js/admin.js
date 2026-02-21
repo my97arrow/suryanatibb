@@ -151,6 +151,8 @@ const importFile = document.getElementById("importFile");
 const adminTotal = document.getElementById("adminTotal");
 const adminOnDuty = document.getElementById("adminOnDuty");
 const adminUpdated = document.getElementById("adminUpdated");
+const adminUnverified = document.getElementById("adminUnverified");
+const adminLowQuality = document.getElementById("adminLowQuality");
 const adminLog = document.getElementById("adminLog");
 const adminTable = document.getElementById("adminTable");
 const selectAll = document.getElementById("selectAll");
@@ -1196,6 +1198,8 @@ function renderAdmin() {
     const verifiedLabel = place.verified ? "موثّق" : "غير موثّق";
     const updatedLabel = place.updated_at ? new Date(place.updated_at).toLocaleDateString("ar") : "-";
     const row = document.createElement("tr");
+    if (!place.verified) row.classList.add("row-unverified");
+    if (quality.score < 55) row.classList.add("row-low-quality");
     row.innerHTML = `
       <td>${isSuper ? `<input type="checkbox" class="row-check" data-index="${place._index}">` : ""}</td>
       <td>
@@ -1260,6 +1264,12 @@ function updateAdminStats(list) {
   if (adminTotal) adminTotal.textContent = list.length;
   if (adminOnDuty)
     adminOnDuty.textContent = list.filter(p => p.type === "pharmacy" && isOnDuty(p)).length;
+  if (adminUnverified) {
+    adminUnverified.textContent = list.filter(p => !p.verified).length;
+  }
+  if (adminLowQuality) {
+    adminLowQuality.textContent = list.filter(p => placeQuality(p).score < 55).length;
+  }
   if (adminUpdated) {
     const last = localStorage.getItem(UPDATED_KEY);
     adminUpdated.textContent = last ? new Date(last).toLocaleString("ar") : "-";
