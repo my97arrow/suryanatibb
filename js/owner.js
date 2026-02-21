@@ -76,6 +76,24 @@ let loadPlacesTimer = null;
 let specialties = [];
 let selectedSpecialties = [];
 const intlPhoneInstances = new Map();
+let intlCountriesLocalized = false;
+
+function localizeIntlCountryNamesAr() {
+  if (intlCountriesLocalized) return;
+  const globals = window.intlTelInputGlobals;
+  if (!globals?.getCountryData || !window.Intl?.DisplayNames) return;
+  try {
+    const regionNames = new Intl.DisplayNames(["ar"], { type: "region" });
+    globals.getCountryData().forEach(country => {
+      const code = (country?.iso2 || "").toUpperCase();
+      const translated = code ? regionNames.of(code) : "";
+      if (translated) country.name = translated;
+    });
+    intlCountriesLocalized = true;
+  } catch {
+    // keep default labels
+  }
+}
 
 function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
@@ -108,6 +126,7 @@ function saveLocal(key, value) {
 
 function initIntlPhoneInputs() {
   if (!window.intlTelInput) return;
+  localizeIntlCountryNamesAr();
   [ownerPhone, phoneInput, whatsappInput, trackPhone]
     .filter(Boolean)
     .forEach(input => {

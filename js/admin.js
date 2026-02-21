@@ -271,9 +271,28 @@ const newSpecialty = document.getElementById("newSpecialty");
 const addSpecialtyBtn = document.getElementById("addSpecialtyBtn");
 const removeSpecialtyBtn = document.getElementById("removeSpecialtyBtn");
 const intlPhoneInstances = new Map();
+let intlCountriesLocalized = false;
+
+function localizeIntlCountryNamesAr() {
+  if (intlCountriesLocalized) return;
+  const globals = window.intlTelInputGlobals;
+  if (!globals?.getCountryData || !window.Intl?.DisplayNames) return;
+  try {
+    const regionNames = new Intl.DisplayNames(["ar"], { type: "region" });
+    globals.getCountryData().forEach(country => {
+      const code = (country?.iso2 || "").toUpperCase();
+      const translated = code ? regionNames.of(code) : "";
+      if (translated) country.name = translated;
+    });
+    intlCountriesLocalized = true;
+  } catch {
+    // keep default labels
+  }
+}
 
 function initIntlPhoneInputs() {
   if (!window.intlTelInput) return;
+  localizeIntlCountryNamesAr();
   [phone, whatsapp, userPhone]
     .filter(Boolean)
     .forEach(input => {
