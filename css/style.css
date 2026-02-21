@@ -1388,10 +1388,10 @@ body.admin {
 
   .action-group .btn {
     width: 100%;
-    padding: 6px 8px;
-    font-size: 10px;
+    padding: 10px 12px;
+    font-size: 11px;
     gap: 4px;
-    min-height: 28px;
+    min-height: 44px;
     line-height: 1.1;
     border-radius: 12px;
     justify-content: center;
@@ -1416,6 +1416,14 @@ body.admin {
     min-height: 34px;
     width: 100%;
     justify-content: center;
+  }
+}
+
+@media (min-width: 681px) and (max-width: 980px) {
+  .action-group .btn {
+    padding: 12px 14px;
+    font-size: 12px;
+    min-height: 48px;
   }
 }
 
