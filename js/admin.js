@@ -69,6 +69,7 @@ let applications = [];
 let dashboardMap = null;
 let dashboardGeoJson = null;
 let dashboardGeoData = null;
+let dashboardSelectedGov = "";
 
 const defaultLocations = {
   "الرقة": {
@@ -975,13 +976,38 @@ function getDashboardFillColor(count) {
   return "#e2e8f0";
 }
 
+function dashboardProvinceStyle(feature) {
+  const count = feature?.properties?.places_count || 0;
+  const isSelected = normalize(feature?.properties?.ar_name || "") === normalize(dashboardSelectedGov || "");
+  return {
+    color: isSelected ? "#d4af37" : "#0f172a",
+    weight: isSelected ? 3 : 1,
+    fillColor: getDashboardFillColor(count),
+    fillOpacity: isSelected ? 0.9 : 0.78
+  };
+}
+
+function applyDashboardSelectionStyle() {
+  if (!dashboardGeoData) return;
+  dashboardGeoData.eachLayer(layer => {
+    const feature = layer?.feature;
+    if (!feature) return;
+    layer.setStyle(dashboardProvinceStyle(feature));
+    if (normalize(feature?.properties?.ar_name || "") === normalize(dashboardSelectedGov || "")) {
+      layer.bringToFront();
+    }
+  });
+}
+
 async function ensureDashboardMap() {
   if (!adminSyriaMap) return false;
   if (!dashboardMap) {
-    dashboardMap = L.map("adminSyriaMap", { zoomControl: true, minZoom: 5, maxZoom: 9 }).setView([35.1, 38.4], 6);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(dashboardMap);
+    dashboardMap = L.map("adminSyriaMap", {
+      zoomControl: true,
+      attributionControl: false,
+      minZoom: 5,
+      maxZoom: 9
+    }).setView([35.1, 38.4], 6);
   }
 
   if (!dashboardGeoJson) {
@@ -1051,19 +1077,15 @@ async function refreshDashboardMap(list) {
   dashboardGeoData = L.geoJSON(
     { ...dashboardGeoJson, features },
     {
-      style: feature => {
-        const count = feature?.properties?.places_count || 0;
-        return {
-          color: "#0f172a",
-          weight: 1,
-          fillColor: getDashboardFillColor(count),
-          fillOpacity: 0.75
-        };
-      },
+      style: dashboardProvinceStyle,
       onEachFeature: (feature, layer) => {
         const name = feature?.properties?.ar_name || feature?.properties?.province_name || "محافظة";
         const count = feature?.properties?.places_count || 0;
         layer.bindTooltip(`${name}: ${count}`, { sticky: true, direction: "top" });
+        layer.on("click", () => {
+          dashboardSelectedGov = name;
+          applyDashboardSelectionStyle();
+        });
       }
     }
   ).addTo(dashboardMap);

@@ -292,7 +292,12 @@ select:focus {
   height: 420px;
   border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.1);
+  background: linear-gradient(160deg, #f8fbff, #edf4fb);
   overflow: hidden;
+}
+
+#adminSyriaMap .leaflet-interactive:focus {
+  outline: none;
 }
 
 .gov-stats-list {
@@ -1439,6 +1444,7 @@ body.dark .dashboard-card {
 
 body.dark #adminSyriaMap {
   border-color: rgba(148, 163, 184, 0.25);
+  background: linear-gradient(160deg, #0f172a, #17243a);
 }
 
 body.dark .gov-stats-list li {
