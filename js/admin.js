@@ -864,7 +864,7 @@ function setUserBadge() {
     : currentUser.role === "super"
     ? "مسؤول مميز"
     : currentUser.role === "governorate"
-    ? `مسؤول محافظة: ${currentUser.governorate}`
+    ? `مسؤول محافظة ومدنها: ${currentUser.governorate}`
     : currentUser.role === "city"
     ? `مسؤول مدينة: ${currentUser.city}`
     : "مشاهدة فقط";
@@ -882,6 +882,24 @@ function setUserBadge() {
 
 function isSuperRole(user = currentUser) {
   return user?.role === "super" || user?.role === "root";
+}
+
+function isGovernorateManager(user = currentUser) {
+  return user?.role === "governorate";
+}
+
+function canAccessUserManagement(user = currentUser) {
+  return isSuperRole(user) || isGovernorateManager(user);
+}
+
+function canManageUser(targetUser) {
+  if (!currentUser || !targetUser) return false;
+  if (targetUser.role === "root") return false;
+  if (isSuperRole(currentUser)) return true;
+  if (isGovernorateManager(currentUser)) {
+    return targetUser.role === "city" && targetUser.governorate === currentUser.governorate;
+  }
+  return false;
 }
 
 function canEdit() {
@@ -1710,13 +1728,16 @@ function clearAll() {
 }
 
 function renderUsers() {
-  if (!usersTable) return;
+  if (!usersTable || !canAccessUserManagement(currentUser)) return;
   const tbody = usersTable.querySelector("tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
   const filter = normalize(userFilter?.value || "");
   const users = loadUsers().filter(u => {
     if (u.role === "root") return false;
+    if (isGovernorateManager(currentUser)) {
+      if (!(u.role === "city" && u.governorate === currentUser.governorate)) return false;
+    }
     if (!filter) return true;
     const hay = `${u.username} ${u.role} ${u.governorate || ""} ${u.city || ""} ${u.phone || ""}`.toLowerCase();
     return hay.includes(filter);
@@ -1735,7 +1756,7 @@ function renderUsers() {
       : user.role === "super"
       ? "مسؤول مميز"
       : user.role === "governorate"
-      ? `محافظة: ${user.governorate}`
+      ? `مسؤول محافظة ومدنها: ${user.governorate}`
       : user.role === "city"
       ? `مدينة: ${user.city}`
       : "مشاهدة فقط";
@@ -1752,11 +1773,11 @@ function renderUsers() {
           <button class="table-icon-btn" type="button" data-edit="${user.username}" title="تعديل" aria-label="تعديل">
             <i class="fa-solid fa-pen"></i>
           </button>
-          ${user.username === "admin" ? "" : `
+          ${canManageUser(user) && user.username !== "admin" ? `
             <button class="table-icon-btn danger" type="button" data-user="${user.username}" title="إزالة" aria-label="إزالة">
               <i class="fa-solid fa-trash"></i>
             </button>
-          `}
+          ` : ""}
         </div>
       </td>
     `;
@@ -1765,6 +1786,11 @@ function renderUsers() {
 
   tbody.querySelectorAll("[data-user]").forEach(btn => {
     btn.addEventListener("click", () => {
+      const target = loadUsers().find(u => u.username === btn.dataset.user);
+      if (!canManageUser(target)) {
+        alert("لا تملك صلاحية حذف هذا المستخدم");
+        return;
+      }
       const users = loadUsers().filter(u => u.username !== btn.dataset.user);
       saveUsers(users);
       logAction("تم حذف مستخدم");
@@ -1776,6 +1802,10 @@ function renderUsers() {
     btn.addEventListener("click", () => {
       const user = loadUsers().find(u => u.username === btn.dataset.edit);
       if (!user) return;
+      if (!canManageUser(user)) {
+        alert("لا تملك صلاحية تعديل هذا المستخدم");
+        return;
+      }
       editingUser = user.username;
       userName.value = user.username;
       userPass.value = user.password;
@@ -1793,10 +1823,14 @@ function renderUsers() {
 }
 
 function addUser() {
+  if (!canAccessUserManagement(currentUser)) {
+    alert("لا تملك صلاحية إدارة المستخدمين");
+    return;
+  }
   const username = normalize(userName?.value);
   const password = userPass?.value || "";
-  const role = userRole?.value || "super";
-  const gov = userGov?.value || "";
+  const role = isGovernorateManager(currentUser) ? "city" : (userRole?.value || "super");
+  const gov = isGovernorateManager(currentUser) ? (currentUser.governorate || "") : (userGov?.value || "");
   const cityVal = userCity?.value || "";
   const phone = getIntlPhoneValue(userPhone);
   const addressVal = userAddress?.value || "";
@@ -1822,43 +1856,59 @@ function addUser() {
   saveUsers(users);
   logAction("تمت إضافة مستخدم");
   renderUsers();
-
-  userName.value = "";
-  userPass.value = "";
-  setIntlPhoneValue(userPhone, "");
-  userAddress.value = "";
+  resetUserFormState();
 }
 
 function updateUser() {
   if (!editingUser) return;
+  if (!canAccessUserManagement(currentUser)) {
+    alert("لا تملك صلاحية إدارة المستخدمين");
+    return;
+  }
   const users = loadUsers();
   const idx = users.findIndex(u => u.username === editingUser);
   if (idx === -1) return;
+  if (!canManageUser(users[idx])) {
+    alert("لا تملك صلاحية تعديل هذا المستخدم");
+    return;
+  }
+
+  const nextRole = isGovernorateManager(currentUser) ? "city" : (userRole?.value || users[idx].role);
+  const nextGov = isGovernorateManager(currentUser) ? (currentUser.governorate || "") : (userGov?.value || "");
+  const nextCity = userCity?.value || "";
+  if ((nextRole === "city" && (!nextGov || !nextCity)) || (nextRole === "governorate" && !nextGov)) {
+    alert("يرجى تحديد النطاق حسب الدور");
+    return;
+  }
 
   users[idx] = {
     ...users[idx],
     password: userPass?.value || users[idx].password,
-    role: userRole?.value || users[idx].role,
-    governorate: userGov?.value || "",
-    city: userCity?.value || "",
+    role: nextRole,
+    governorate: nextGov,
+    city: nextRole === "city" ? nextCity : "",
     phone: getIntlPhoneValue(userPhone),
     address: userAddress?.value || ""
   };
   saveUsers(users);
   logAction("تم تحديث بيانات مستخدم");
   renderUsers();
-
-  editingUser = null;
-  addUserBtn.hidden = false;
-  updateUserBtn.hidden = true;
-  userName.value = "";
-  userPass.value = "";
-  setIntlPhoneValue(userPhone, "");
-  userAddress.value = "";
+  resetUserFormState();
 }
 
 function updateUserScopeForm() {
   if (!userRole) return;
+  if (isGovernorateManager(currentUser)) {
+    userRole.value = "city";
+    userRole.disabled = true;
+    userGov.disabled = true;
+    userGov.value = currentUser.governorate || "";
+    const cities = userGov.value && locations[userGov.value] ? Object.keys(locations[userGov.value]) : [];
+    populateSelect(userCity, cities, "اختر المدينة");
+    userCity.disabled = false;
+    return;
+  }
+  userRole.disabled = false;
   const role = userRole.value;
   if (role === "super" || role === "viewer") {
     userGov.disabled = true;
@@ -1877,15 +1927,58 @@ function updateUserScopeForm() {
 }
 
 function populateUserScopeOptions() {
-  populateSelect(userGov, Object.keys(locations), "اختر المحافظة");
-  userGov.addEventListener("change", () => {
+  const govOptions = isGovernorateManager(currentUser) ? [currentUser.governorate].filter(Boolean) : Object.keys(locations);
+  populateSelect(userGov, govOptions, "اختر المحافظة");
+  if (!userGov.dataset.boundChange) {
+    userGov.addEventListener("change", () => {
+      const gov = userGov.value;
+      const cities = gov && locations[gov] ? Object.keys(locations[gov]) : [];
+      populateSelect(userCity, cities, "اختر المدينة");
+    });
+    userGov.dataset.boundChange = "1";
+  }
+}
+
+function updateLocationManagementByRole() {
+  const isSuper = isSuperRole(currentUser);
+  if (newGov?.closest(".field")) newGov.closest(".field").hidden = !isSuper;
+  if (addGovBtn) addGovBtn.hidden = !isSuper;
+  if (removeGovBtn) removeGovBtn.hidden = !isSuper;
+}
+
+function resetUserFormState() {
+  editingUser = null;
+  addUserBtn.hidden = false;
+  updateUserBtn.hidden = true;
+  userName.value = "";
+  userPass.value = "";
+  setIntlPhoneValue(userPhone, "");
+  userAddress.value = "";
+  if (userRole) userRole.value = isGovernorateManager(currentUser) ? "city" : "viewer";
+  populateUserScopeOptions();
+  updateUserScopeForm();
+  if (isGovernorateManager(currentUser)) {
+    userGov.value = currentUser.governorate || "";
     const gov = userGov.value;
     const cities = gov && locations[gov] ? Object.keys(locations[gov]) : [];
     populateSelect(userCity, cities, "اختر المدينة");
-  });
+  }
 }
 
 function refreshLocationManagement() {
+  updateLocationManagementByRole();
+  if (isGovernorateManager(currentUser)) {
+    const gov = currentUser.governorate || "";
+    populateSelect(locGov, gov ? [gov] : [], "اختر المحافظة");
+    locGov.value = gov;
+    locGov.disabled = true;
+    const cities = gov && locations[gov] ? Object.keys(locations[gov]) : [];
+    const prevCity = locCity?.value || "";
+    populateSelect(locCity, cities, "اختر المدينة");
+    if (prevCity && cities.includes(prevCity)) locCity.value = prevCity;
+    return;
+  }
+  if (locGov) locGov.disabled = false;
   const prevGov = locGov?.value || "";
   populateSelect(locGov, Object.keys(locations), "اختر المحافظة");
   if (prevGov && locations[prevGov]) locGov.value = prevGov;
@@ -1962,11 +2055,13 @@ function addGovernorate() {
 }
 
 function addCity() {
-  if (!isSuperRole(currentUser)) {
-    alert("هذه العملية للمسؤول المميز فقط");
+  if (!(isSuperRole(currentUser) || isGovernorateManager(currentUser))) {
+    alert("هذه العملية للمسؤول المخوّل فقط");
     return;
   }
-  const gov = locGov?.value || Object.keys(locations)[0] || "";
+  const gov = isGovernorateManager(currentUser)
+    ? (currentUser.governorate || "")
+    : (locGov?.value || Object.keys(locations)[0] || "");
   const value = newCity?.value?.trim();
   if (!gov) {
     alert("يرجى اختيار المحافظة أولاً");
@@ -1996,11 +2091,11 @@ function removeGovernorate() {
 }
 
 function removeCity() {
-  if (!isSuperRole(currentUser)) {
-    alert("هذه العملية للمسؤول المميز فقط");
+  if (!(isSuperRole(currentUser) || isGovernorateManager(currentUser))) {
+    alert("هذه العملية للمسؤول المخوّل فقط");
     return;
   }
-  const gov = locGov?.value;
+  const gov = isGovernorateManager(currentUser) ? (currentUser.governorate || "") : locGov?.value;
   const cityVal = locCity?.value;
   if (!gov || !cityVal) return;
   if (!confirm("هل تريد حذف المدينة بكل قراها؟")) return;
@@ -2241,11 +2336,12 @@ function renderApplications() {
 }
 
 function isSuperOnlyView(view) {
-  return ["users", "locations", "specialties", "reports"].includes(view);
+  return ["specialties", "reports"].includes(view);
 }
 
 function canAccessView(view) {
   if (!view) return false;
+  if (["users", "locations"].includes(view)) return canAccessUserManagement(currentUser);
   if (!isSuperOnlyView(view)) return true;
   return isSuperRole(currentUser);
 }
@@ -2279,9 +2375,9 @@ function applyAdminView(view) {
 }
 
 function configureAdminSidebarByRole() {
-  const isSuper = isSuperRole(currentUser);
-  document.querySelectorAll(".admin-nav-btn[data-super-only='true']").forEach(btn => {
-    btn.hidden = !isSuper;
+  document.querySelectorAll(".admin-nav-btn[data-admin-view]").forEach(btn => {
+    const view = btn.dataset.adminView;
+    btn.hidden = !canAccessView(view);
   });
   if (!canAccessView(currentAdminView)) {
     applyAdminView("dashboard");
@@ -2376,11 +2472,15 @@ async function bootApp() {
   updateToolbarByRole();
   configureAdminSidebarByRole();
 
-  if (isSuperRole(currentUser)) {
+  if (canAccessUserManagement(currentUser)) {
     populateUserScopeOptions();
     updateUserScopeForm();
     renderUsers();
+  }
+  if (canAccessView("locations")) {
     refreshLocationManagement();
+  }
+  if (isSuperRole(currentUser)) {
     refreshSpecialtyManagement();
     renderReports();
   }
