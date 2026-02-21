@@ -390,14 +390,12 @@ async function savePlaceToDb(data, id = null) {
     const message = (error?.message || "").toLowerCase();
     const needsFallback =
       message.includes("workdays") ||
-      message.includes("verified") ||
-      message.includes("quality_score") ||
       message.includes("updated_by") ||
       message.includes("updated_at") ||
       message.includes("column") ||
       message.includes("schema cache");
     if (!needsFallback) throw error;
-    const { workdays, verified, verified_by, verified_at, quality_score, updated_by, updated_at, ...fallback } = data;
+    const { workdays, updated_by, updated_at, ...fallback } = data;
     return await attempt(fallback);
   }
 }
@@ -554,20 +552,6 @@ function logAction(action) {
   logPage = 1;
   saveLogs();
   renderLogs();
-}
-
-function placeQuality(place) {
-  let score = 0;
-  if (normalize(place.name)) score += 20;
-  if (normalize(place.type)) score += 10;
-  if (normalize(place.governorate)) score += 10;
-  if (normalize(place.city)) score += 10;
-  if (place.lat && place.lng) score += 20;
-  if (normalize(place.phone) || normalize(place.whatsapp)) score += 15;
-  if (normalize(place.address)) score += 10;
-  if (normalize(place.specialty)) score += 5;
-  const label = score >= 80 ? "عالية" : (score >= 55 ? "متوسطة" : "ضعيفة");
-  return { score, label };
 }
 
 function isOnDuty(place) {
@@ -1157,19 +1141,6 @@ function savePlace() {
   const hoursValue = buildHoursValue();
   if (hours) hours.value = hoursValue;
   const nowIso = new Date().toISOString();
-  const existing = editIndex.value !== "" ? places[Number(editIndex.value)] : null;
-  const quality = placeQuality({
-    name: name.value.trim(),
-    type: type.value,
-    specialty: specialty.value.trim(),
-    phone: phone.value.trim(),
-    whatsapp: whatsapp.value.trim(),
-    governorate: governorate.value.trim(),
-    city: city.value.trim(),
-    address: address.value.trim(),
-    lat: +lat.value,
-    lng: +lng.value
-  });
   const data = {
     name: name.value.trim(),
     type: type.value,
@@ -1188,12 +1159,8 @@ function savePlace() {
     lng: +lng.value,
     schedule: normalizedSchedule,
     workdays: getWorkdaysFromForm(),
-    quality_score: quality.score,
     updated_by: currentUser?.username || "",
-    updated_at: nowIso,
-    verified: !!existing?.verified,
-    verified_by: existing?.verified_by || "",
-    verified_at: existing?.verified_at || ""
+    updated_at: nowIso
   };
 
   (async () => {

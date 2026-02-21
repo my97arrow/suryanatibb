@@ -452,31 +452,6 @@ select:focus {
   border-radius: 999px;
 }
 
-.quality-badge {
-  display: inline-flex;
-  align-items: center;
-  margin-inline-start: 6px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  border: 1px solid transparent;
-}
-
-.quality-badge.high {
-  background: rgba(34, 197, 94, 0.14);
-  border-color: rgba(34, 197, 94, 0.34);
-}
-
-.quality-badge.mid {
-  background: rgba(245, 158, 11, 0.14);
-  border-color: rgba(245, 158, 11, 0.34);
-}
-
-.quality-badge.low {
-  background: rgba(239, 68, 68, 0.14);
-  border-color: rgba(239, 68, 68, 0.34);
-}
-
 .card-meta {
   display: grid;
   gap: 6px;
@@ -1571,18 +1546,6 @@ body.dark .icon-btn {
 body.dark .icon-btn:hover {
   background: var(--primary);
   color: #fff;
-}
-
-body.dark .quality-badge.high {
-  background: rgba(34, 197, 94, 0.22);
-}
-
-body.dark .quality-badge.mid {
-  background: rgba(245, 158, 11, 0.22);
-}
-
-body.dark .quality-badge.low {
-  background: rgba(239, 68, 68, 0.22);
 }
 
 body.dark .emergency-item {
