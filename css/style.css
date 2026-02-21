@@ -159,6 +159,14 @@ a {
   margin-bottom: 24px;
 }
 
+.controls.collapsed {
+  grid-template-columns: 1fr;
+}
+
+.controls.collapsed .field:not(.action-field) {
+  display: none;
+}
+
 .action-field {
   grid-column: 1 / -1;
 }

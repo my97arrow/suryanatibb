@@ -14,7 +14,8 @@ const elements = {
   sortBy: document.getElementById("sortBy"),
   locateMe: document.getElementById("locateMe"),
   toggleCompact: document.getElementById("toggleCompact"),
-  shareResults: document.getElementById("shareResults"),
+  toggleFilters: document.getElementById("toggleFilters"),
+  controlsPanel: document.getElementById("controlsPanel"),
   cards: document.getElementById("cards"),
   empty: document.getElementById("emptyState"),
   loadMoreWrap: document.getElementById("loadMoreWrap"),
@@ -41,6 +42,7 @@ let currentPage = 1;
 const pageSize = 20;
 let filteredPlaces = [];
 const THEME_KEY = "healthDutyTheme";
+const FILTER_PANEL_KEY = "healthDutyFiltersCollapsed";
 
 const FILTERS_KEY = "healthDutyFilters";
 
@@ -698,6 +700,21 @@ function updateCompactToggle() {
   document.body.classList.toggle("compact", compactMode);
 }
 
+function setFiltersCollapsed(collapsed) {
+  if (!elements.controlsPanel || !elements.toggleFilters) return;
+  elements.controlsPanel.classList.toggle("collapsed", collapsed);
+  elements.toggleFilters.innerHTML = collapsed
+    ? '<i class="fa-solid fa-filter"></i> إظهار الفلاتر'
+    : '<i class="fa-solid fa-filter-circle-xmark"></i> إخفاء الفلاتر';
+  localStorage.setItem(FILTER_PANEL_KEY, collapsed ? "1" : "0");
+}
+
+function initFiltersCollapsed() {
+  const saved = localStorage.getItem(FILTER_PANEL_KEY);
+  const collapsed = saved === null ? true : saved === "1";
+  setFiltersCollapsed(collapsed);
+}
+
 function debounce(fn, wait = 250) {
   let t;
   return (...args) => {
@@ -770,6 +787,7 @@ async function init() {
   const savedFilters = loadFilters();
   applyFilterState(urlFilters || savedFilters);
   updateCompactToggle();
+  initFiltersCollapsed();
 
   const debouncedApply = debounce(applyFilters, 250);
   [elements.search].filter(Boolean).forEach(el => el.addEventListener("input", () => {
@@ -857,23 +875,10 @@ async function init() {
     elements.locateMe.addEventListener("click", () => locateUser(true));
   }
 
-  if (elements.shareResults) {
-    elements.shareResults.addEventListener("click", async () => {
-      const url = buildShareUrl();
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: document.title, url });
-          return;
-        } catch {
-          // fallback to clipboard
-        }
-      }
-      try {
-        await navigator.clipboard.writeText(url);
-        showToast("تم نسخ رابط النتائج");
-      } catch {
-        showToast("تعذر نسخ الرابط");
-      }
+  if (elements.toggleFilters) {
+    elements.toggleFilters.addEventListener("click", () => {
+      const collapsed = elements.controlsPanel?.classList.contains("collapsed");
+      setFiltersCollapsed(!collapsed);
     });
   }
 

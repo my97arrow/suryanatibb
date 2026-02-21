@@ -40,7 +40,7 @@
 </header>
 
 <main id="mainContent" class="container">
-  <section class="controls" aria-label="أدوات البحث">
+  <section id="controlsPanel" class="controls" aria-label="أدوات البحث">
     <div class="field">
       <label for="search">بحث سريع</label>
       <input id="search" placeholder="ابحث بالاسم أو التخصص أو العنوان">
@@ -101,9 +101,9 @@
           <i class="fa-solid fa-grip"></i>
           عرض مدمج
         </button>
-        <button id="shareResults" class="btn ghost" type="button">
-          <i class="fa-solid fa-share-nodes"></i>
-          مشاركة
+        <button id="toggleFilters" class="btn ghost" type="button">
+          <i class="fa-solid fa-filter"></i>
+          إظهار الفلاتر
         </button>
         <button id="clearFilters" class="btn ghost" type="button">مسح الفلاتر</button>
       </div>
