@@ -8,6 +8,7 @@ const LOCATIONS_KEY = "healthDutyLocations";
 const SPECIALTIES_KEY = "healthDutySpecialties";
 const REPORTS_KEY = "healthDutyReports";
 const APPLICATIONS_KEY = "healthDutyApplications";
+const THEME_KEY = "healthDutyTheme";
 function localISODate(d = new Date()) {
   const tz = d.getTimezoneOffset() * 60000;
   return new Date(d.getTime() - tz).toISOString().split("T")[0];
@@ -224,6 +225,10 @@ const filterCity = document.getElementById("filterCity");
 
 const loginPanel = document.getElementById("loginPanel");
 const adminApp = document.getElementById("adminApp");
+const adminSidebar = document.getElementById("adminSidebar");
+const adminSidebarBackdrop = document.getElementById("adminSidebarBackdrop");
+const adminMenuToggle = document.getElementById("adminMenuToggle");
+const adminThemeToggle = document.getElementById("adminThemeToggle");
 const dashboardSection = document.getElementById("dashboardSection");
 const placesSection = document.getElementById("placesSection");
 const activityPanel = document.getElementById("activityPanel");
@@ -828,6 +833,7 @@ function login() {
 function logout() {
   clearSession();
   currentUser = null;
+  setAdminSidebarOpen(false);
   if (adminApp) adminApp.hidden = true;
   if (loginPanel) loginPanel.hidden = false;
   if (userBadge) userBadge.hidden = true;
@@ -2213,6 +2219,9 @@ function applyAdminView(view) {
   if (selectedView === "dashboard" && dashboardMap) {
     setTimeout(() => dashboardMap.invalidateSize(), 120);
   }
+  if (window.innerWidth <= 768) {
+    setAdminSidebarOpen(false);
+  }
 }
 
 function configureAdminSidebarByRole() {
@@ -2223,6 +2232,27 @@ function configureAdminSidebarByRole() {
   if (!canAccessView(currentAdminView)) {
     applyAdminView("dashboard");
   }
+}
+
+function setAdminSidebarOpen(isOpen) {
+  document.body.classList.toggle("admin-sidebar-open", !!isOpen);
+  if (adminSidebarBackdrop) adminSidebarBackdrop.hidden = !isOpen;
+}
+
+function applyTheme(mode) {
+  const dark = mode === "dark";
+  document.body.classList.toggle("dark", dark);
+  if (adminThemeToggle) {
+    adminThemeToggle.innerHTML = dark
+      ? `<i class="fa-solid fa-sun"></i>`
+      : `<i class="fa-solid fa-moon"></i>`;
+  }
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const preferred = saved || "light";
+  applyTheme(preferred);
 }
 
 function updateToolbarByRole() {
@@ -2265,6 +2295,7 @@ function renderPagination(container, totalItems, current, onPage) {
 
 async function bootApp() {
   if (!currentUser) return;
+  setAdminSidebarOpen(false);
   if (loginPanel) loginPanel.hidden = true;
   if (adminApp) adminApp.hidden = false;
   if (logoutBtn) logoutBtn.hidden = false;
@@ -2312,6 +2343,23 @@ if (governorate) governorate.addEventListener("change", () => {
   updateCityOptions();
   applyUserScopeToForm();
 });
+if (adminMenuToggle) {
+  adminMenuToggle.addEventListener("click", () => {
+    const isOpen = document.body.classList.contains("admin-sidebar-open");
+    setAdminSidebarOpen(!isOpen);
+  });
+}
+if (adminSidebarBackdrop) {
+  adminSidebarBackdrop.addEventListener("click", () => setAdminSidebarOpen(false));
+}
+if (adminThemeToggle) {
+  adminThemeToggle.addEventListener("click", () => {
+    const dark = !document.body.classList.contains("dark");
+    const mode = dark ? "dark" : "light";
+    applyTheme(mode);
+    localStorage.setItem(THEME_KEY, mode);
+  });
+}
 adminNavButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     const view = btn.dataset.adminView;
@@ -2436,6 +2484,13 @@ if (hours24) {
   });
 }
 
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 768) {
+    setAdminSidebarOpen(false);
+  }
+});
+
+initTheme();
 initIntlPhoneInputs();
 ensureDefaultUser();
 locations = loadLocations();

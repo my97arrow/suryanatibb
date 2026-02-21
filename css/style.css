@@ -1447,6 +1447,23 @@ body.admin {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  z-index: 30;
+}
+
+.admin-sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 28;
+}
+
+.admin-mobile-toggle {
+  display: none;
+}
+
+.admin-theme-toggle i {
+  pointer-events: none;
 }
 
 .admin-nav-btn {
@@ -1483,6 +1500,10 @@ body.admin {
 body.dark .admin-sidebar {
   background: #121e33;
   border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark .admin-sidebar-backdrop {
+  background: rgba(2, 6, 23, 0.66);
 }
 
 body.dark .admin-nav-btn {
@@ -1550,8 +1571,29 @@ body.dark .gov-stats-list .rank {
     gap: 14px;
   }
 
+  .admin-mobile-toggle {
+    display: inline-flex;
+  }
+
   .admin-sidebar {
-    position: static;
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: min(330px, calc(100vw - 24px));
+    transform: translateX(115%);
+    transition: transform 0.24s ease;
+    overflow-y: auto;
+    box-shadow: 0 22px 38px rgba(15, 23, 42, 0.34);
+    z-index: 29;
+  }
+
+  body.admin-sidebar-open .admin-sidebar {
+    transform: translateX(0);
+  }
+
+  body.admin-sidebar-open {
+    overflow: hidden;
   }
 
   #adminSyriaMap {
@@ -1635,6 +1677,12 @@ body.dark .gov-stats-list .rank {
   }
 
   .header-actions .btn { flex: none; }
+
+  body.admin .header-actions .btn {
+    min-height: 40px;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
 }
 
 @media (min-width: 681px) and (max-width: 980px) {
@@ -1654,6 +1702,11 @@ body.dark .gov-stats-list .rank {
 body.dark {
   background: radial-gradient(circle at top, rgba(15, 23, 42, 0.8), transparent 55%),
     linear-gradient(135deg, #0b1120, #0f172a);
+}
+
+body.dark.admin .site-header {
+  background: rgba(15, 23, 42, 0.82);
+  border-bottom-color: rgba(148, 163, 184, 0.2);
 }
 
 body.dark .btn.ghost {

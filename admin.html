@@ -28,6 +28,12 @@
       </div>
     </div>
     <div class="header-actions">
+      <button id="adminMenuToggle" class="btn ghost admin-mobile-toggle" type="button" aria-label="القائمة">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <button id="adminThemeToggle" class="btn ghost admin-theme-toggle" type="button" aria-label="الوضع الداكن">
+        <i class="fa-solid fa-moon"></i>
+      </button>
       <div id="userBadge" class="user-badge" hidden></div>
       <button id="logoutBtn" class="btn ghost" type="button" hidden>
         تسجيل الخروج
@@ -55,8 +61,9 @@
   </section>
 
   <section id="adminApp" hidden>
+  <div id="adminSidebarBackdrop" class="admin-sidebar-backdrop" hidden></div>
   <div class="admin-layout">
-  <aside class="admin-sidebar">
+  <aside class="admin-sidebar" id="adminSidebar">
     <button class="admin-nav-btn active" type="button" data-admin-view="dashboard">
       <i class="fa-solid fa-chart-line"></i>
       الإحصائيات
