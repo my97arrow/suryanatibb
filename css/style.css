@@ -1900,14 +1900,6 @@ body.dark .owner-status.status-needs-changes {
   color: #d8b4fe;
 }
 
-#adminTable tr.row-unverified td {
-  background: rgba(245, 158, 11, 0.08);
-}
-
-body.dark #adminTable tr.row-unverified td {
-  background: rgba(245, 158, 11, 0.16);
-}
-
 .table-actions {
   display: flex;
   justify-content: flex-end;

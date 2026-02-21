@@ -155,8 +155,6 @@ const placeModal = document.getElementById("placeModal");
 const importFile = document.getElementById("importFile");
 const adminTotal = document.getElementById("adminTotal");
 const adminOnDuty = document.getElementById("adminOnDuty");
-const adminUpdated = document.getElementById("adminUpdated");
-const adminUnverified = document.getElementById("adminUnverified");
 const adminLog = document.getElementById("adminLog");
 const adminTable = document.getElementById("adminTable");
 const selectAll = document.getElementById("selectAll");
@@ -1232,35 +1230,6 @@ function deletePlace(i) {
   })();
 }
 
-function toggleVerify(i) {
-  if (currentUser?.role !== "super") {
-    alert("هذه العملية للمسؤول المميز فقط");
-    return;
-  }
-  const place = places[i];
-  if (!place) return;
-  const willVerify = !place.verified;
-  const updated = {
-    ...place,
-    verified: willVerify,
-    verified_by: willVerify ? (currentUser?.username || "") : "",
-    verified_at: willVerify ? new Date().toISOString() : "",
-    updated_by: currentUser?.username || "",
-    updated_at: new Date().toISOString()
-  };
-  (async () => {
-    try {
-      await savePlaceToDb(updated, place.id || null);
-    } catch {
-      // keep local update if remote fails
-    }
-    places[i] = updated;
-    savePlaces();
-    logAction(`${willVerify ? "تم توثيق" : "تم إلغاء توثيق"} ${place.name}`);
-    renderAdmin();
-  })();
-}
-
 function renderAdmin() {
   if (!adminTable) return;
   const tbody = adminTable.querySelector("tbody");
@@ -1293,15 +1262,12 @@ function renderAdmin() {
   const isSuper = currentUser?.role === "super";
 
   slice.forEach(place => {
-    const verifiedLabel = place.verified ? "موثّق" : "غير موثّق";
-    const updatedLabel = place.updated_at ? new Date(place.updated_at).toLocaleDateString("ar") : "-";
     const row = document.createElement("tr");
-    if (!place.verified) row.classList.add("row-unverified");
     row.innerHTML = `
       <td>${isSuper ? `<input type="checkbox" class="row-check" data-index="${place._index}">` : ""}</td>
       <td>
         <strong>${place.name}</strong>
-        <div class="muted">${verifiedLabel} • تحديث ${updatedLabel}</div>
+        <div class="muted">${place.specialty || "بدون اختصاص"}</div>
       </td>
       <td>${typeLabel(place.type)}</td>
       <td>${place.governorate || ""}</td>
@@ -1312,11 +1278,6 @@ function renderAdmin() {
         ${canEdit() ? `
           <button class="table-icon-btn" type="button" data-edit="${place._index}" title="تعديل" aria-label="تعديل">
             <i class="fa-solid fa-pen"></i>
-          </button>
-        ` : ""}
-        ${isSuper ? `
-          <button class="table-icon-btn ${place.verified ? "warn" : "ok"}" type="button" data-verify="${place._index}" title="${place.verified ? "إلغاء التوثيق" : "توثيق"}" aria-label="${place.verified ? "إلغاء التوثيق" : "توثيق"}">
-            <i class="fa-solid ${place.verified ? "fa-shield" : "fa-circle-check"}"></i>
           </button>
         ` : ""}
         ${isSuper ? `
@@ -1340,9 +1301,6 @@ function renderAdmin() {
   });
   tbody.querySelectorAll("[data-del]").forEach(btn => {
     btn.addEventListener("click", () => deletePlace(Number(btn.dataset.del)));
-  });
-  tbody.querySelectorAll("[data-verify]").forEach(btn => {
-    btn.addEventListener("click", () => toggleVerify(Number(btn.dataset.verify)));
   });
 }
 
@@ -1373,13 +1331,6 @@ function updateAdminStats(list) {
   if (adminTotal) adminTotal.textContent = list.length;
   if (adminOnDuty)
     adminOnDuty.textContent = list.filter(p => p.type === "pharmacy" && isOnDuty(p)).length;
-  if (adminUnverified) {
-    adminUnverified.textContent = list.filter(p => !p.verified).length;
-  }
-  if (adminUpdated) {
-    const last = localStorage.getItem(UPDATED_KEY);
-    adminUpdated.textContent = last ? new Date(last).toLocaleString("ar") : "-";
-  }
 }
 
 function renderLogs() {
