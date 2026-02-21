@@ -833,6 +833,34 @@ function hasScopeForPlace(place) {
   return false;
 }
 
+function hasScopeForApplication(application) {
+  if (!currentUser) return false;
+  if (currentUser.role === "super") return true;
+  if (currentUser.role === "viewer") return false;
+
+  const payloadGov = application?.payload?.governorate || "";
+  const payloadCity = application?.payload?.city || "";
+
+  let governorateValue = payloadGov;
+  let cityValue = payloadCity;
+
+  if ((!governorateValue || !cityValue) && application?.place_id) {
+    const place = places.find(p => p.id && String(p.id) === String(application.place_id));
+    if (place) {
+      governorateValue = governorateValue || place.governorate || "";
+      cityValue = cityValue || place.city || "";
+    }
+  }
+
+  if (currentUser.role === "governorate") {
+    return governorateValue === currentUser.governorate;
+  }
+  if (currentUser.role === "city") {
+    return governorateValue === currentUser.governorate && cityValue === currentUser.city;
+  }
+  return false;
+}
+
 function hasScopeForSelection() {
   if (!currentUser) return false;
   if (currentUser.role === "super") return true;
@@ -1877,6 +1905,7 @@ function renderApplications() {
   const statusFilter = applicationFilterStatus?.value || "all";
   const typeFilter = applicationFilterType?.value || "all";
   const list = applications
+    .filter(a => hasScopeForApplication(a))
     .filter(a => statusFilter === "all" || (a.status || "pending") === statusFilter)
     .filter(a => typeFilter === "all" || (a.type || "create") === typeFilter);
 
@@ -1916,6 +1945,7 @@ function renderApplications() {
 
   tbody.querySelectorAll("[data-app-status]").forEach(btn => {
     btn.addEventListener("click", async () => {
+      if (!canEdit()) return;
       const idx = Number(btn.dataset.appStatus);
       const next = btn.dataset.next || "in_review";
       const app = list[idx];
@@ -1963,7 +1993,7 @@ function renderApplications() {
 }
 
 function isSuperOnlyView(view) {
-  return ["users", "locations", "specialties", "applications", "reports"].includes(view);
+  return ["users", "locations", "specialties", "reports"].includes(view);
 }
 
 function canAccessView(view) {
@@ -2077,8 +2107,8 @@ async function bootApp() {
     refreshLocationManagement();
     refreshSpecialtyManagement();
     renderReports();
-    renderApplications();
   }
+  renderApplications();
 
   applyAdminView("dashboard");
   populateSelect(governorate, Object.keys(locations), "اختر المحافظة");
