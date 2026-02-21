@@ -21,6 +21,11 @@ const elements = {
   loadMore: document.getElementById("loadMore"),
   map: document.getElementById("map"),
   clearFilters: document.getElementById("clearFilters"),
+  emergencyMode: document.getElementById("emergencyMode"),
+  emergencyModal: document.getElementById("emergencyModal"),
+  emergencyBody: document.getElementById("emergencyBody"),
+  emergencyApply: document.getElementById("emergencyApply"),
+  emergencyClose: document.getElementById("emergencyClose"),
   toast: document.getElementById("toast"),
   statusBar: document.getElementById("statusBar"),
   themeToggle: document.getElementById("themeToggle")
@@ -402,6 +407,84 @@ function distanceKm(a, b) {
   return 2 * r * Math.asin(Math.sqrt(h));
 }
 
+function placeQuality(place) {
+  let score = 0;
+  if (normalize(place.name)) score += 20;
+  if (normalize(place.type)) score += 10;
+  if (normalize(place.governorate)) score += 10;
+  if (normalize(place.city)) score += 10;
+  if (place.lat && place.lng) score += 20;
+  if (normalize(place.phone) || normalize(place.whatsapp)) score += 15;
+  if (normalize(place.address)) score += 10;
+  if (normalize(place.specialty)) score += 5;
+  if (score >= 80) return { score, level: "high", label: "جودة عالية" };
+  if (score >= 55) return { score, level: "mid", label: "جودة متوسطة" };
+  return { score, level: "low", label: "جودة ضعيفة" };
+}
+
+function findNearestBy(list, predicate) {
+  if (!userLocation) return null;
+  const candidates = list.filter(p => p.lat && p.lng && predicate(p));
+  if (!candidates.length) return null;
+  return [...candidates]
+    .sort((a, b) => distanceKm(userLocation, a) - distanceKm(userLocation, b))[0];
+}
+
+function openEmergencyModal(contentHtml = "") {
+  if (!elements.emergencyModal || !elements.emergencyBody) return;
+  elements.emergencyBody.innerHTML = contentHtml;
+  elements.emergencyModal.classList.add("active");
+  elements.emergencyModal.setAttribute("aria-hidden", "false");
+}
+
+function closeEmergencyModal() {
+  if (!elements.emergencyModal) return;
+  elements.emergencyModal.classList.remove("active");
+  elements.emergencyModal.setAttribute("aria-hidden", "true");
+}
+
+async function runEmergencyMode() {
+  if (!userLocation) {
+    await locateUser(false);
+  }
+  if (!userLocation) {
+    showToast("يلزم تفعيل الموقع لاستخدام وضع الطوارئ");
+    return;
+  }
+
+  const nearestOnDutyPharmacy = findNearestBy(allPlaces, p => p.type === "pharmacy" && p.onDuty);
+  const nearestHospital = findNearestBy(allPlaces, p => p.type === "hospital");
+  const nearestDispensary = findNearestBy(allPlaces, p => p.type === "dispensary");
+
+  const row = place => {
+    if (!place) return `<div class="emergency-item muted">غير متوفر</div>`;
+    const km = distanceKm(userLocation, place).toFixed(1);
+    return `
+      <div class="emergency-item">
+        <strong>${place.name}</strong>
+        <span>${place.city || ""} • ${km} كم</span>
+      </div>
+    `;
+  };
+
+  openEmergencyModal(`
+    <div class="emergency-grid">
+      <div>
+        <h4>أقرب صيدلية مناوبة</h4>
+        ${row(nearestOnDutyPharmacy)}
+      </div>
+      <div>
+        <h4>أقرب مشفى</h4>
+        ${row(nearestHospital)}
+      </div>
+      <div>
+        <h4>أقرب مستوصف</h4>
+        ${row(nearestDispensary)}
+      </div>
+    </div>
+  `);
+}
+
 function renderCards(list) {
   if (!elements.cards) return;
   elements.cards.innerHTML = "";
@@ -422,6 +505,7 @@ function renderCards(list) {
     const hasPhone = !!normalize(place.phone);
     const hasWhatsapp = !!normalize(place.whatsapp);
 
+    const quality = placeQuality(place);
     card.innerHTML = `
       <div class="card-head">
         ${
@@ -438,6 +522,7 @@ function renderCards(list) {
           <p class="muted">
             ${typeLabel(place.type)}
             ${shouldShowDutyBadge(place.type) && place.onDuty ? `<span class="badge on inline-badge">مناوب</span>` : ""}
+            <span class="quality-badge ${quality.level}">${quality.label}</span>
           </p>
         </div>
       </div>
@@ -742,6 +827,20 @@ async function init() {
 
   if (elements.clearFilters) {
     elements.clearFilters.addEventListener("click", clearFilters);
+  }
+  if (elements.emergencyMode) {
+    elements.emergencyMode.addEventListener("click", runEmergencyMode);
+  }
+  if (elements.emergencyClose) {
+    elements.emergencyClose.addEventListener("click", closeEmergencyModal);
+  }
+  if (elements.emergencyApply) {
+    elements.emergencyApply.addEventListener("click", () => {
+      if (elements.filter) elements.filter.value = "onDuty";
+      if (elements.sortBy) elements.sortBy.value = userLocation ? "distance" : "onDuty";
+      applyFilters();
+      closeEmergencyModal();
+    });
   }
 
   if (elements.themeToggle) {

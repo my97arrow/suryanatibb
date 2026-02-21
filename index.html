@@ -101,6 +101,10 @@
           <i class="fa-solid fa-share-nodes"></i>
           مشاركة
         </button>
+        <button id="emergencyMode" class="btn ghost" type="button">
+          <i class="fa-solid fa-truck-medical"></i>
+          وضع الطوارئ
+        </button>
         <button id="clearFilters" class="btn ghost" type="button">مسح الفلاتر</button>
       </div>
     </div>
@@ -167,6 +171,17 @@
 
 <div id="statusBar" class="status-bar" hidden></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<div id="emergencyModal" class="modal" aria-hidden="true">
+  <div class="modal-box">
+    <h3>وضع الطوارئ</h3>
+    <div id="emergencyBody" class="emergency-body"></div>
+    <div class="modal-actions">
+      <button id="emergencyApply" class="save" type="button">تطبيق الفلتر</button>
+      <button id="emergencyClose" class="cancel" type="button">إغلاق</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>

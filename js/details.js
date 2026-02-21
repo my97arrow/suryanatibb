@@ -87,11 +87,27 @@ function normalizeWorkdays(value) {
     .filter(Boolean);
 }
 
+function placeQuality(place) {
+  let score = 0;
+  if ((place.name || "").trim()) score += 20;
+  if ((place.type || "").trim()) score += 10;
+  if ((place.governorate || "").trim()) score += 10;
+  if ((place.city || "").trim()) score += 10;
+  if (place.lat && place.lng) score += 20;
+  if ((place.phone || "").trim() || (place.whatsapp || "").trim()) score += 15;
+  if ((place.address || "").trim()) score += 10;
+  if ((place.specialty || "").trim()) score += 5;
+  if (score >= 80) return { score, label: "عالية" };
+  if (score >= 55) return { score, label: "متوسطة" };
+  return { score, label: "ضعيفة" };
+}
+
 function renderDetail(place) {
   const duty = isOnDuty(place);
   const schedule = normalizeSchedule(place.schedule);
   const showDuty = place.type === "pharmacy";
   const workdays = normalizeWorkdays(place.workdays);
+  const quality = placeQuality(place);
   const media = place.image
     ? `<button class="place-icon square detail-media ${place.type}" type="button" data-image="${place.image}">
         <img src="${place.image}" alt="${place.name}">
@@ -156,6 +172,10 @@ function renderDetail(place) {
     </div>
 
     <div class="detail-grid">
+      <div class="detail-info">
+        <h3>جودة البيانات</h3>
+        <p>مستوى الجودة: ${quality.label} (${quality.score}%)</p>
+      </div>
       <div class="detail-info">
         <h3>الاختصاص</h3>
         <p>${place.specialty || "لا يوجد اختصاص محدد."}</p>
