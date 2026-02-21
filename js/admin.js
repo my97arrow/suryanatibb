@@ -371,10 +371,14 @@ async function savePlaceToDb(data, id = null) {
     const message = (error?.message || "").toLowerCase();
     const needsFallback =
       message.includes("workdays") ||
+      message.includes("verified") ||
+      message.includes("quality_score") ||
+      message.includes("updated_by") ||
+      message.includes("updated_at") ||
       message.includes("column") ||
       message.includes("schema cache");
     if (!needsFallback) throw error;
-    const { workdays, ...fallback } = data;
+    const { workdays, verified, verified_by, verified_at, quality_score, updated_by, updated_at, ...fallback } = data;
     return await attempt(fallback);
   }
 }
@@ -446,11 +450,25 @@ function saveLogs() {
 }
 
 function logAction(action) {
-  const entry = { action, at: new Date().toISOString() };
+  const entry = { action, at: new Date().toISOString(), actor: currentUser?.username || "system" };
   logs.unshift(entry);
   logPage = 1;
   saveLogs();
   renderLogs();
+}
+
+function placeQuality(place) {
+  let score = 0;
+  if (normalize(place.name)) score += 20;
+  if (normalize(place.type)) score += 10;
+  if (normalize(place.governorate)) score += 10;
+  if (normalize(place.city)) score += 10;
+  if (place.lat && place.lng) score += 20;
+  if (normalize(place.phone) || normalize(place.whatsapp)) score += 15;
+  if (normalize(place.address)) score += 10;
+  if (normalize(place.specialty)) score += 5;
+  const label = score >= 80 ? "عالية" : (score >= 55 ? "متوسطة" : "ضعيفة");
+  return { score, label };
 }
 
 function isOnDuty(place) {
@@ -1011,6 +1029,20 @@ function savePlace() {
   const normalizedSchedule = dutyDates.map(d => (d || "").toString().split("T")[0]);
   const hoursValue = buildHoursValue();
   if (hours) hours.value = hoursValue;
+  const nowIso = new Date().toISOString();
+  const existing = editIndex.value !== "" ? places[Number(editIndex.value)] : null;
+  const quality = placeQuality({
+    name: name.value.trim(),
+    type: type.value,
+    specialty: specialty.value.trim(),
+    phone: phone.value.trim(),
+    whatsapp: whatsapp.value.trim(),
+    governorate: governorate.value.trim(),
+    city: city.value.trim(),
+    address: address.value.trim(),
+    lat: +lat.value,
+    lng: +lng.value
+  });
   const data = {
     name: name.value.trim(),
     type: type.value,
@@ -1028,7 +1060,13 @@ function savePlace() {
     lat: +lat.value,
     lng: +lng.value,
     schedule: normalizedSchedule,
-    workdays: getWorkdaysFromForm()
+    workdays: getWorkdaysFromForm(),
+    quality_score: quality.score,
+    updated_by: currentUser?.username || "",
+    updated_at: nowIso,
+    verified: !!existing?.verified,
+    verified_by: existing?.verified_by || "",
+    verified_at: existing?.verified_at || ""
   };
 
   (async () => {
@@ -1093,6 +1131,35 @@ function deletePlace(i) {
   })();
 }
 
+function toggleVerify(i) {
+  if (currentUser?.role !== "super") {
+    alert("هذه العملية للمسؤول المميز فقط");
+    return;
+  }
+  const place = places[i];
+  if (!place) return;
+  const willVerify = !place.verified;
+  const updated = {
+    ...place,
+    verified: willVerify,
+    verified_by: willVerify ? (currentUser?.username || "") : "",
+    verified_at: willVerify ? new Date().toISOString() : "",
+    updated_by: currentUser?.username || "",
+    updated_at: new Date().toISOString()
+  };
+  (async () => {
+    try {
+      await savePlaceToDb(updated, place.id || null);
+    } catch {
+      // keep local update if remote fails
+    }
+    places[i] = updated;
+    savePlaces();
+    logAction(`${willVerify ? "تم توثيق" : "تم إلغاء توثيق"} ${place.name}`);
+    renderAdmin();
+  })();
+}
+
 function renderAdmin() {
   if (!adminTable) return;
   const tbody = adminTable.querySelector("tbody");
@@ -1125,10 +1192,16 @@ function renderAdmin() {
   const isSuper = currentUser?.role === "super";
 
   slice.forEach(place => {
+    const quality = placeQuality(place);
+    const verifiedLabel = place.verified ? "موثّق" : "غير موثّق";
+    const updatedLabel = place.updated_at ? new Date(place.updated_at).toLocaleDateString("ar") : "-";
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${isSuper ? `<input type="checkbox" class="row-check" data-index="${place._index}">` : ""}</td>
-      <td>${place.name}</td>
+      <td>
+        <strong>${place.name}</strong>
+        <div class="muted">${verifiedLabel} • جودة ${quality.label} (${quality.score}%) • تحديث ${updatedLabel}</div>
+      </td>
       <td>${typeLabel(place.type)}</td>
       <td>${place.governorate || ""}</td>
       <td>${place.city || ""}</td>
@@ -1136,6 +1209,7 @@ function renderAdmin() {
       <td>${place.address || ""}</td>
       <td>
         ${canEdit() ? `<button class="btn ghost" data-edit="${place._index}">تعديل</button>` : ""}
+        ${isSuper ? `<button class="btn ghost" data-verify="${place._index}">${place.verified ? "إلغاء توثيق" : "توثيق"}</button>` : ""}
         ${isSuper ? `<button class="btn danger" data-del="${place._index}">حذف</button>` : ""}
       </td>
     `;
@@ -1153,6 +1227,9 @@ function renderAdmin() {
   });
   tbody.querySelectorAll("[data-del]").forEach(btn => {
     btn.addEventListener("click", () => deletePlace(Number(btn.dataset.del)));
+  });
+  tbody.querySelectorAll("[data-verify]").forEach(btn => {
+    btn.addEventListener("click", () => toggleVerify(Number(btn.dataset.verify)));
   });
 }
 
@@ -1199,7 +1276,7 @@ function renderLogs() {
 
   slice.forEach(item => {
     const li = document.createElement("li");
-    li.textContent = `${item.action} - ${new Date(item.at).toLocaleString("ar")}`;
+    li.textContent = `${item.action} - بواسطة ${item.actor || "system"} - ${new Date(item.at).toLocaleString("ar")}`;
     adminLog.appendChild(li);
   });
   renderPagination(logPagination, logs.length, logPage, page => {
