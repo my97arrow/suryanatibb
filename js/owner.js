@@ -4,6 +4,8 @@ const LOCATIONS_TABLE = "managed_locations";
 const STORAGE_KEY = "places";
 const SPECIALTIES_KEY = "healthDutySpecialties";
 const THEME_KEY = "healthDutyTheme";
+const SUPABASE_URL = "https://vkpyzbxczxlnnuxrqdlo.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4CgPYh5cw8GFFaFtxeTEdw_dFybiO-k";
 const WEEK_DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 const DEFAULT_SPECIALTIES = [
   "قلبية",
@@ -604,6 +606,7 @@ async function loadOwnerApplicationsFromDb(phone) {
 }
 
 async function saveApplicationToDb(application) {
+  saveApplicationToDb.lastError = null;
   if (!window.supabaseClient) return null;
   try {
     const { data, error } = await window.supabaseClient
@@ -614,8 +617,29 @@ async function saveApplicationToDb(application) {
     if (error) throw error;
     return data?.id || null;
   } catch (error) {
-    saveApplicationToDb.lastError = error;
-    return null;
+    // Fallback to REST insert for environments where Supabase JS client fails.
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/place_applications`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify(application)
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw payload;
+      }
+      const inserted = await response.json();
+      const row = Array.isArray(inserted) ? inserted[0] : inserted;
+      return row?.id || null;
+    } catch (restError) {
+      saveApplicationToDb.lastError = restError || error;
+      return null;
+    }
   }
 }
 
