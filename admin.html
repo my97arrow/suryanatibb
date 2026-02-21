@@ -377,6 +377,12 @@
   <div class="modal-box modal-wide">
     <h3 id="modalTitle">إضافة مكان طبي</h3>
     <input type="hidden" id="editIndex">
+    <div class="modal-form-shell">
+    <section class="form-section">
+      <h4 class="form-section-title">
+        <i class="fa-solid fa-circle-info"></i>
+        البيانات الأساسية
+      </h4>
     <div class="form-grid">
       <div class="field">
         <label for="name">اسم المكان</label>
@@ -470,7 +476,13 @@
       </div>
       <div id="imagePreview" class="image-preview">لا توجد صورة</div>
     </div>
+    </section>
 
+    <section class="form-section">
+    <h4 class="form-section-title">
+      <i class="fa-regular fa-calendar-days"></i>
+      تواريخ المناوبة
+    </h4>
     <div class="field">
       <label class="field-label">تواريخ المناوبة</label>
       <div class="inline-actions">
@@ -478,17 +490,24 @@
         <button id="clearDutyDates" class="btn ghost" type="button">مسح التواريخ</button>
       </div>
     </div>
+    </section>
 
-    <h4>الموقع على الخريطة</h4>
+    <section class="form-section">
+    <h4 class="form-section-title">
+      <i class="fa-solid fa-map-location-dot"></i>
+      الموقع على الخريطة
+    </h4>
     <div class="map-inline">
       <input id="lat" type="number" step="0.000001" placeholder="خط العرض">
       <input id="lng" type="number" step="0.000001" placeholder="خط الطول">
     </div>
     <div id="selectMap"></div>
+    </section>
 
     <div class="modal-actions">
       <button class="save" onclick="savePlace()">حفظ</button>
       <button class="cancel" onclick="closeModal()">إلغاء</button>
+    </div>
     </div>
   </div>
 </div>

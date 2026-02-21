@@ -1049,14 +1049,39 @@ select:focus {
 }
 
 .modal-wide {
-  width: min(760px, 100%);
+  width: min(980px, 100%);
+}
+
+.modal-form-shell {
+  display: grid;
+  gap: 14px;
+}
+
+.form-section {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 14px;
+}
+
+.form-section-title {
+  margin: 0 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.form-section-title i {
+  color: var(--primary);
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .field.span-2 {
@@ -1095,6 +1120,10 @@ select:focus {
   gap: 6px;
   font-size: 13px;
   color: var(--muted);
+}
+
+.workdays-grid label input {
+  accent-color: var(--primary);
 }
 
 .multi-select {
@@ -1189,19 +1218,20 @@ select:focus {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .inline-actions input {
-  flex: 1;
+  flex: 1 1 240px;
 }
 
 .modal-box h3 {
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .modal-box h4 {
-  margin: 16px 0 8px;
+  margin: 0;
 }
 
 .crop-box {
@@ -1214,6 +1244,20 @@ select:focus {
   overflow: hidden;
   background: rgba(15, 23, 42, 0.05);
   border-radius: var(--radius-sm);
+}
+
+@media (max-width: 768px) {
+  .modal-box {
+    padding: 18px;
+  }
+
+  .form-section {
+    padding: 12px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .crop-wrap img {
@@ -1684,6 +1728,11 @@ body.dark .emergency-item {
 body.dark .multi-select {
   border-color: rgba(226, 232, 240, 0.25);
   background: rgba(15, 23, 42, 0.55);
+}
+
+body.dark .form-section {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.34);
 }
 
 body.dark .multi-chip {
