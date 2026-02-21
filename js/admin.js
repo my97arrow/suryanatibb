@@ -6,6 +6,7 @@ const UPDATED_KEY = "healthDutyUpdated";
 const BACKUP_KEY = "healthDutyBackups";
 const LOCATIONS_KEY = "healthDutyLocations";
 const SPECIALTIES_KEY = "healthDutySpecialties";
+const REPORTS_KEY = "healthDutyReports";
 function localISODate(d = new Date()) {
   const tz = d.getTimezoneOffset() * 60000;
   return new Date(d.getTime() - tz).toISOString().split("T")[0];
@@ -61,6 +62,7 @@ let locations = {};
 let specialties = [];
 let editingUser = null;
 let selectedSpecialties = [];
+let reports = [];
 
 const defaultLocations = {
   "الرقة": {
@@ -159,6 +161,10 @@ const selectAll = document.getElementById("selectAll");
 const deleteSelected = document.getElementById("deleteSelected");
 const adminPagination = document.getElementById("adminPagination");
 const logPagination = document.getElementById("logPagination");
+const reportsPanel = document.getElementById("reportsPanel");
+const reportsTable = document.getElementById("reportsTable");
+const reportsEmpty = document.getElementById("reportsEmpty");
+const reportFilterStatus = document.getElementById("reportFilterStatus");
 
 const PAGE_SIZE = 10;
 let adminPage = 1;
@@ -445,6 +451,46 @@ function loadLogs() {
   } catch {
     return [];
   }
+}
+
+function loadReports() {
+  try {
+    const raw = localStorage.getItem(REPORTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveReports(list = reports) {
+  localStorage.setItem(REPORTS_KEY, JSON.stringify(list.slice(0, 1000)));
+}
+
+async function loadReportsFromDb() {
+  if (!window.supabaseClient) return null;
+  try {
+    const { data, error } = await window.supabaseClient
+      .from("reports")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch {
+    return null;
+  }
+}
+
+async function saveReportStatusToDb(report) {
+  if (!window.supabaseClient || !report?.id) return;
+  await window.supabaseClient
+    .from("reports")
+    .update({ status: report.status, handled_by: currentUser?.username || "", handled_at: new Date().toISOString() })
+    .eq("id", report.id);
+}
+
+async function deleteReportFromDb(id) {
+  if (!window.supabaseClient || !id) return;
+  await window.supabaseClient.from("reports").delete().eq("id", id);
 }
 
 function saveLogs() {
@@ -1675,6 +1721,96 @@ function removeCity() {
   refreshLocationManagement();
 }
 
+function reportTypeLabel(type) {
+  if (type === "wrong_phone") return "رقم غير صحيح";
+  if (type === "closed_place") return "المكان مغلق";
+  if (type === "wrong_location") return "موقع غير دقيق";
+  if (type === "wrong_hours") return "ساعات غير صحيحة";
+  return "أخرى";
+}
+
+function reportStatusLabel(status) {
+  if (status === "in_progress") return "قيد المعالجة";
+  if (status === "resolved") return "مغلق";
+  return "مفتوح";
+}
+
+function renderReports() {
+  if (!reportsTable) return;
+  const tbody = reportsTable.querySelector("tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  const statusFilter = reportFilterStatus?.value || "all";
+  const list = reports.filter(r => statusFilter === "all" || (r.status || "open") === statusFilter);
+
+  if (!list.length) {
+    if (reportsEmpty) reportsEmpty.hidden = false;
+    return;
+  }
+  if (reportsEmpty) reportsEmpty.hidden = true;
+
+  list.forEach((report, index) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${report.place_name || "-"}</td>
+      <td>${report.governorate || ""} ${report.city ? "- " + report.city : ""}</td>
+      <td>${reportTypeLabel(report.report_type)}</td>
+      <td>${reportStatusLabel(report.status || "open")}</td>
+      <td>${report.note || "-"}</td>
+      <td>${report.created_at ? new Date(report.created_at).toLocaleString("ar") : "-"}</td>
+      <td>
+        <button class="btn ghost" data-report-status="${index}" data-next="open">فتح</button>
+        <button class="btn ghost" data-report-status="${index}" data-next="in_progress">معالجة</button>
+        <button class="btn ghost" data-report-status="${index}" data-next="resolved">إغلاق</button>
+        <button class="btn danger" data-report-del="${index}">حذف</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  tbody.querySelectorAll("[data-report-status]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const idx = Number(btn.dataset.reportStatus);
+      const next = btn.dataset.next || "open";
+      const report = list[idx];
+      if (!report) return;
+      report.status = next;
+      report.handled_by = currentUser?.username || "";
+      report.handled_at = new Date().toISOString();
+      const reportIdx = reports.findIndex(r => r === report || (r.id && report.id && r.id === report.id));
+      if (reportIdx !== -1) reports[reportIdx] = report;
+      saveReports();
+      try {
+        await saveReportStatusToDb(report);
+      } catch {
+        // keep local
+      }
+      logAction(`تحديث حالة بلاغ ${report.place_name || ""} إلى ${reportStatusLabel(next)}`);
+      renderReports();
+    });
+  });
+
+  tbody.querySelectorAll("[data-report-del]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const idx = Number(btn.dataset.reportDel);
+      const report = list[idx];
+      if (!report) return;
+      const reportIdx = reports.findIndex(r => r === report || (r.id && report.id && r.id === report.id));
+      if (reportIdx === -1) return;
+      reports.splice(reportIdx, 1);
+      saveReports();
+      try {
+        await deleteReportFromDb(report.id);
+      } catch {
+        // keep local
+      }
+      logAction(`حذف بلاغ ${report.place_name || ""}`);
+      renderReports();
+    });
+  });
+}
+
 function updateToolbarByRole() {
   const buttons = document.querySelectorAll(".admin-toolbar button");
   buttons.forEach(btn => {
@@ -1723,6 +1859,7 @@ async function bootApp() {
   locations = loadLocations();
   specialties = loadSpecialties();
   places = (await loadPlacesFromDb()) || loadPlaces();
+  reports = (await loadReportsFromDb()) || loadReports();
   specialties = uniqueSpecialties([
     ...specialties,
     ...places.flatMap(place => toSpecialtyArray(place.specialty))
@@ -1746,9 +1883,12 @@ async function bootApp() {
     renderUsers();
     refreshLocationManagement();
     refreshSpecialtyManagement();
+    if (reportsPanel) reportsPanel.hidden = false;
+    renderReports();
   } else {
     if (userManagement) userManagement.hidden = true;
     if (locationManagement) locationManagement.hidden = true;
+    if (reportsPanel) reportsPanel.hidden = true;
   }
 
   populateSelect(governorate, Object.keys(locations), "اختر المحافظة");
@@ -1810,6 +1950,7 @@ if (addGovBtn) addGovBtn.addEventListener("click", addGovernorate);
 if (addCityBtn) addCityBtn.addEventListener("click", addCity);
 if (removeGovBtn) removeGovBtn.addEventListener("click", removeGovernorate);
 if (removeCityBtn) removeCityBtn.addEventListener("click", removeCity);
+if (reportFilterStatus) reportFilterStatus.addEventListener("change", renderReports);
 if (addSpecialtyBtn) addSpecialtyBtn.addEventListener("click", addSpecialty);
 if (removeSpecialtyBtn) removeSpecialtyBtn.addEventListener("click", removeSpecialty);
 if (newSpecialty) {

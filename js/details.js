@@ -8,6 +8,31 @@ const todayISO = localISODate();
 const detailRoot = document.getElementById("detail");
 const detailEmpty = document.getElementById("detailEmpty");
 const THEME_KEY = "healthDutyTheme";
+const REPORTS_KEY = "healthDutyReports";
+
+function loadReports() {
+  try {
+    const raw = localStorage.getItem(REPORTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveReports(list) {
+  localStorage.setItem(REPORTS_KEY, JSON.stringify(list));
+}
+
+async function saveReportToDb(report) {
+  if (!window.supabaseClient) return null;
+  try {
+    const { error } = await window.supabaseClient.from("reports").insert(report);
+    if (error) throw error;
+    return true;
+  } catch {
+    return null;
+  }
+}
 
 function loadPlaces() {
   try {
@@ -156,6 +181,9 @@ function renderDetail(place) {
           <button class="icon-btn share-btn" type="button" aria-label="مشاركة">
             <i class="fa-solid fa-share-nodes"></i>
           </button>
+          <button class="icon-btn report-btn" type="button" aria-label="بلاغ">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </button>
         </div>
       </div>
       <div class="detail-schedule">
@@ -208,6 +236,7 @@ function renderDetail(place) {
   }
 
   const shareBtn = detailRoot.querySelector(".share-btn");
+  const reportBtn = detailRoot.querySelector(".report-btn");
   if (shareBtn) {
     shareBtn.addEventListener("click", async () => {
       const url = window.location.href;
@@ -225,6 +254,52 @@ function renderDetail(place) {
       } catch {
         alert("تعذر نسخ الرابط");
       }
+    });
+  }
+
+  const reportModal = document.getElementById("reportModal");
+  const reportType = document.getElementById("reportType");
+  const reportNote = document.getElementById("reportNote");
+  const reportSubmit = document.getElementById("reportSubmit");
+  const reportClose = document.getElementById("reportClose");
+
+  const closeReportModal = () => {
+    if (!reportModal) return;
+    reportModal.classList.remove("active");
+    reportModal.setAttribute("aria-hidden", "true");
+    if (reportNote) reportNote.value = "";
+  };
+
+  if (reportBtn && reportModal) {
+    reportBtn.addEventListener("click", () => {
+      reportModal.classList.add("active");
+      reportModal.setAttribute("aria-hidden", "false");
+    });
+  }
+  if (reportClose) reportClose.addEventListener("click", closeReportModal);
+  if (reportModal) {
+    reportModal.addEventListener("click", event => {
+      if (event.target === reportModal) closeReportModal();
+    });
+  }
+  if (reportSubmit) {
+    reportSubmit.addEventListener("click", async () => {
+      const report = {
+        place_id: place.id || null,
+        place_name: place.name || "",
+        governorate: place.governorate || "",
+        city: place.city || "",
+        report_type: reportType?.value || "other",
+        note: (reportNote?.value || "").trim(),
+        status: "open",
+        created_at: new Date().toISOString()
+      };
+      const list = loadReports();
+      list.unshift(report);
+      saveReports(list.slice(0, 500));
+      await saveReportToDb(report);
+      closeReportModal();
+      alert("تم إرسال البلاغ");
     });
   }
 

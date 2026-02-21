@@ -241,6 +241,40 @@
     <ul id="adminLog" class="log-list"></ul>
     <div class="pagination" id="logPagination"></div>
   </section>
+
+  <section id="reportsPanel" class="log-panel" hidden>
+    <h3>بلاغات المستخدمين</h3>
+    <div class="controls">
+      <div class="field">
+        <label for="reportFilterStatus">حالة البلاغ</label>
+        <select id="reportFilterStatus">
+          <option value="all">الكل</option>
+          <option value="open">مفتوح</option>
+          <option value="in_progress">قيد المعالجة</option>
+          <option value="resolved">مغلق</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="reportsTable">
+        <thead>
+          <tr>
+            <th>المكان</th>
+            <th>الموقع</th>
+            <th>نوع البلاغ</th>
+            <th>الحالة</th>
+            <th>ملاحظة</th>
+            <th>التاريخ</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="reportsEmpty" class="empty-state" hidden>
+      <p>لا توجد بلاغات حالياً.</p>
+    </div>
+  </section>
   </section>
 </main>
 

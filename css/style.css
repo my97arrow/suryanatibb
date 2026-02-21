@@ -1531,8 +1531,16 @@ body.dark .section-divider {
   font-size: 13px;
 }
 
+#reportsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
 #adminTable th,
-#adminTable td {
+#adminTable td,
+#reportsTable th,
+#reportsTable td {
   text-align: right;
   padding: 10px 12px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
@@ -1540,7 +1548,9 @@ body.dark .section-divider {
 }
 
 body.dark #adminTable th,
-body.dark #adminTable td {
+body.dark #adminTable td,
+body.dark #reportsTable th,
+body.dark #reportsTable td {
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 

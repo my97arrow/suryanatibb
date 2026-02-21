@@ -49,6 +49,30 @@
   </div>
 </div>
 
+<div id="reportModal" class="modal" aria-hidden="true">
+  <div class="modal-box">
+    <h3>إرسال بلاغ</h3>
+    <div class="field">
+      <label for="reportType">نوع البلاغ</label>
+      <select id="reportType">
+        <option value="wrong_phone">الرقم غير صحيح</option>
+        <option value="closed_place">المكان مغلق</option>
+        <option value="wrong_location">الموقع غير دقيق</option>
+        <option value="wrong_hours">ساعات العمل غير صحيحة</option>
+        <option value="other">ملاحظة أخرى</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="reportNote">ملاحظة (اختياري)</label>
+      <input id="reportNote" placeholder="اكتب تفاصيل سريعة">
+    </div>
+    <div class="modal-actions">
+      <button id="reportSubmit" class="save" type="button">إرسال</button>
+      <button id="reportClose" class="cancel" type="button">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/dist/umd/supabase.min.js"></script>
 <script src="js/supabase.js"></script>
