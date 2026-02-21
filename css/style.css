@@ -1429,6 +1429,11 @@ body.admin {
   background: linear-gradient(135deg, #f8fafc, #eef2f7);
 }
 
+body.admin.admin-loading .site-header,
+body.admin.admin-loading .container {
+  visibility: hidden;
+}
+
 .admin-layout {
   display: grid;
   grid-template-columns: 290px minmax(0, 1fr);

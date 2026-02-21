@@ -1038,11 +1038,11 @@ function logout() {
   currentUser = null;
   setAdminSidebarOpen(false);
   if (adminApp) adminApp.hidden = true;
-  if (loginPanel) loginPanel.hidden = false;
   if (userBadge) userBadge.hidden = true;
   if (sidebarUserBadge) sidebarUserBadge.hidden = true;
   if (logoutBtn) logoutBtn.hidden = true;
   if (sidebarLogoutBtn) sidebarLogoutBtn.hidden = true;
+  window.location.href = "admin-login.html";
 }
 
 function setUserBadge() {
@@ -2645,7 +2645,7 @@ async function bootApp() {
   ensureDefaultUser();
   setAdminSidebarOpen(false);
   if (loginPanel) loginPanel.hidden = true;
-  if (adminApp) adminApp.hidden = false;
+  if (adminApp) adminApp.hidden = true;
   if (logoutBtn) logoutBtn.hidden = false;
   setUserBadge();
 
@@ -2689,6 +2689,7 @@ async function bootApp() {
   updateCityOptions();
   setSpecialtiesForm([]);
   applyUserScopeToForm();
+  if (adminApp) adminApp.hidden = false;
 }
 
 if (governorate) governorate.addEventListener("change", () => {
@@ -2851,13 +2852,13 @@ async function initAdminPage() {
   await syncLocationsFromDb();
   specialties = loadSpecialties();
   const session = loadSession();
-  if (session) {
-    currentUser = session;
-    await bootApp();
-  } else {
-    if (loginPanel) loginPanel.hidden = false;
-    if (adminApp) adminApp.hidden = true;
+  if (!session) {
+    window.location.replace("admin-login.html");
+    return;
   }
+  currentUser = session;
+  await bootApp();
+  document.body.classList.remove("admin-loading");
 }
 
 initAdminPage();

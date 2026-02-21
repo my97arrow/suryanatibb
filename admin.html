@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <title>لوحة التحكم</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    (function () {
+      try {
+        if (!localStorage.getItem("healthDutySession")) {
+          window.location.replace("admin-login.html");
+        }
+      } catch {
+        window.location.replace("admin-login.html");
+      }
+    })();
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +27,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
 </head>
-<body class="admin">
+<body class="admin admin-loading">
 
 <header class="site-header">
   <div class="header-inner">
@@ -40,22 +51,6 @@
 </header>
 
 <main class="container">
-  <section id="loginPanel" class="login-panel">
-    <div class="login-card">
-      <h2>تسجيل الدخول</h2>
-      <p class="muted">الرجاء إدخال بيانات الدخول للوصول إلى لوحة التحكم.</p>
-      <div class="field">
-        <label for="loginUser">اسم المستخدم</label>
-        <input id="loginUser" placeholder="مثال: admin">
-      </div>
-      <div class="field">
-        <label for="loginPass">كلمة المرور</label>
-        <input id="loginPass" type="password" placeholder="••••••••">
-      </div>
-      <button id="loginBtn" class="btn primary" type="button">دخول</button>
-    </div>
-  </section>
-
   <section id="adminApp" hidden>
   <div id="adminSidebarBackdrop" class="admin-sidebar-backdrop" hidden></div>
   <div class="admin-layout">
