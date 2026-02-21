@@ -66,6 +66,9 @@ let editingUser = null;
 let selectedSpecialties = [];
 let reports = [];
 let applications = [];
+let dashboardMap = null;
+let dashboardGeoJson = null;
+let dashboardGeoData = null;
 
 const defaultLocations = {
   "الرقة": {
@@ -155,6 +158,8 @@ const placeModal = document.getElementById("placeModal");
 const importFile = document.getElementById("importFile");
 const adminTotal = document.getElementById("adminTotal");
 const adminOnDuty = document.getElementById("adminOnDuty");
+const adminSyriaMap = document.getElementById("adminSyriaMap");
+const adminGovStats = document.getElementById("adminGovStats");
 const adminLog = document.getElementById("adminLog");
 const adminTable = document.getElementById("adminTable");
 const selectAll = document.getElementById("selectAll");
@@ -907,6 +912,163 @@ function applyUserScopeToForm() {
   }
 }
 
+const GOV_NAME_MAP = {
+  aleppo: "حلب",
+  damascus: "دمشق",
+  "rif dimashq": "ريف دمشق",
+  "rural damascus": "ريف دمشق",
+  "deir ez zor": "دير الزور",
+  "deir ezzor": "دير الزور",
+  "dayr az zawr": "دير الزور",
+  "deir az zawr": "دير الزور",
+  "dayr az zor": "دير الزور",
+  daraa: "درعا",
+  "dar a": "درعا",
+  hama: "حماة",
+  hamah: "حماة",
+  homs: "حمص",
+  idlib: "إدلب",
+  latakia: "اللاذقية",
+  lattakia: "اللاذقية",
+  quneitra: "القنيطرة",
+  "ar raqqa": "الرقة",
+  "ar raqqah": "الرقة",
+  raqqa: "الرقة",
+  raqqah: "الرقة",
+  "as suwayda": "السويداء",
+  suwayda: "السويداء",
+  tartus: "طرطوس",
+  "al hasakah": "الحسكة",
+  hasakah: "الحسكة"
+};
+
+function normalizeGovName(value) {
+  return (value || "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[`'’]/g, " ")
+    .replace(/[_-]+/g, " ")
+    .replace(/[^a-z0-9\u0600-\u06FF\s]/gi, " ")
+    .replace(/\s+/g, " ");
+}
+
+function toArabicGovernorateName(value) {
+  if (!value) return "";
+  if (locations[value]) return value;
+  const key = normalizeGovName(value);
+  if (locations[key]) return key;
+  if (GOV_NAME_MAP[key]) return GOV_NAME_MAP[key];
+  const compact = key.replace(/\s+/g, " ");
+  if (GOV_NAME_MAP[compact]) return GOV_NAME_MAP[compact];
+  return value;
+}
+
+function getDashboardFillColor(count) {
+  if (count >= 40) return "#0f766e";
+  if (count >= 20) return "#0e7490";
+  if (count >= 10) return "#0891b2";
+  if (count >= 5) return "#38bdf8";
+  if (count >= 1) return "#bae6fd";
+  return "#e2e8f0";
+}
+
+async function ensureDashboardMap() {
+  if (!adminSyriaMap) return false;
+  if (!dashboardMap) {
+    dashboardMap = L.map("adminSyriaMap", { zoomControl: true, minZoom: 5, maxZoom: 9 }).setView([35.1, 38.4], 6);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(dashboardMap);
+  }
+
+  if (!dashboardGeoJson) {
+    try {
+      const response = await fetch("data/syria_provinces.geojson");
+      if (!response.ok) return false;
+      dashboardGeoJson = await response.json();
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+function renderGovernorateStatsList(entries) {
+  if (!adminGovStats) return;
+  adminGovStats.innerHTML = "";
+  if (!entries.length) {
+    adminGovStats.innerHTML = `<li class="muted">لا توجد بيانات ضمن النطاق الحالي.</li>`;
+    return;
+  }
+  entries.slice(0, 14).forEach((item, idx) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span class="rank">${idx + 1}</span>
+      <span>${item.governorate}</span>
+      <span class="count">${item.count}</span>
+    `;
+    adminGovStats.appendChild(li);
+  });
+}
+
+async function refreshDashboardMap(list) {
+  const ready = await ensureDashboardMap();
+  if (!ready || !dashboardGeoJson) return;
+
+  const counts = new Map();
+  list.forEach(place => {
+    const gov = toArabicGovernorateName(place.governorate || "");
+    if (!gov) return;
+    counts.set(gov, (counts.get(gov) || 0) + 1);
+  });
+
+  const entries = [...counts.entries()]
+    .map(([governorate, count]) => ({ governorate, count }))
+    .sort((a, b) => b.count - a.count);
+  renderGovernorateStatsList(entries);
+
+  const features = (dashboardGeoJson.features || []).map(feature => {
+    const rawName = feature?.properties?.province_name || feature?.properties?.name || "";
+    const arName = toArabicGovernorateName(rawName);
+    const count = counts.get(arName) || 0;
+    return {
+      ...feature,
+      properties: {
+        ...(feature.properties || {}),
+        ar_name: arName || rawName,
+        places_count: count
+      }
+    };
+  });
+
+  if (dashboardGeoData) {
+    dashboardMap.removeLayer(dashboardGeoData);
+  }
+
+  dashboardGeoData = L.geoJSON(
+    { ...dashboardGeoJson, features },
+    {
+      style: feature => {
+        const count = feature?.properties?.places_count || 0;
+        return {
+          color: "#0f172a",
+          weight: 1,
+          fillColor: getDashboardFillColor(count),
+          fillOpacity: 0.75
+        };
+      },
+      onEachFeature: (feature, layer) => {
+        const name = feature?.properties?.ar_name || feature?.properties?.province_name || "محافظة";
+        const count = feature?.properties?.places_count || 0;
+        layer.bindTooltip(`${name}: ${count}`, { sticky: true, direction: "top" });
+      }
+    }
+  ).addTo(dashboardMap);
+}
+
 function openModal(i = null) {
   if (!placeModal) return;
   if (!canEdit()) {
@@ -1328,6 +1490,7 @@ function updateAdminStats(list) {
   if (adminTotal) adminTotal.textContent = list.length;
   if (adminOnDuty)
     adminOnDuty.textContent = list.filter(p => p.type === "pharmacy" && isOnDuty(p)).length;
+  refreshDashboardMap(list);
 }
 
 function renderLogs() {
@@ -1989,6 +2152,9 @@ function applyAdminView(view) {
   adminNavButtons.forEach(btn => {
     btn.classList.toggle("active", btn.dataset.adminView === selectedView);
   });
+  if (selectedView === "dashboard" && dashboardMap) {
+    setTimeout(() => dashboardMap.invalidateSize(), 120);
+  }
 }
 
 function configureAdminSidebarByRole() {

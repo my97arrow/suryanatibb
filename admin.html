@@ -94,14 +94,34 @@
     </button>
   </aside>
   <div class="admin-main">
-  <section id="dashboardSection" class="stats" aria-label="ملخص الإدارة" data-view="dashboard">
-    <div class="stat-card">
-      <span>عدد الأماكن</span>
-      <strong id="adminTotal">0</strong>
+  <section id="dashboardSection" class="dashboard" aria-label="ملخص الإدارة" data-view="dashboard">
+    <div class="stats dashboard-stats">
+      <div class="stat-card">
+        <span>عدد الأماكن</span>
+        <strong id="adminTotal">0</strong>
+      </div>
+      <div class="stat-card">
+        <span>مناوبة اليوم</span>
+        <strong id="adminOnDuty">0</strong>
+      </div>
     </div>
-    <div class="stat-card">
-      <span>مناوبة اليوم</span>
-      <strong id="adminOnDuty">0</strong>
+
+    <div class="dashboard-grid">
+      <article class="dashboard-card">
+        <div class="dashboard-head">
+          <h3>خريطة التوزع حسب المحافظات</h3>
+          <p class="muted">كثافة الأماكن الطبية ضمن نطاق صلاحياتك.</p>
+        </div>
+        <div id="adminSyriaMap"></div>
+      </article>
+
+      <article class="dashboard-card">
+        <div class="dashboard-head">
+          <h3>أعلى المحافظات</h3>
+          <p class="muted">ترتيب المحافظات حسب عدد الأماكن الطبية.</p>
+        </div>
+        <ul id="adminGovStats" class="gov-stats-list"></ul>
+      </article>
     </div>
   </section>
 
