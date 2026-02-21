@@ -1747,12 +1747,18 @@ body.dark #ownerRequestsTable tbody tr:hover td {
 .table-row-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 8px;
   white-space: nowrap;
   padding-top: 6px !important;
   padding-bottom: 6px !important;
   line-height: 1;
+  width: 100%;
+}
+
+#adminTable td.table-row-actions,
+#applicationsTable td.table-row-actions {
+  text-align: center;
 }
 
 .table-icon-btn {
