@@ -1745,20 +1745,20 @@ body.dark #ownerRequestsTable tbody tr:hover td {
 }
 
 .table-row-actions {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   white-space: nowrap;
-  padding-top: 6px !important;
-  padding-bottom: 6px !important;
+  min-height: 30px;
   line-height: 1;
-  width: 100%;
 }
 
-#adminTable td.table-row-actions,
-#applicationsTable td.table-row-actions {
+.table-actions-cell {
   text-align: center;
+  vertical-align: middle;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
 }
 
 .table-icon-btn {

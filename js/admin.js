@@ -1274,17 +1274,19 @@ function renderAdmin() {
       <td>${place.city || ""}</td>
       <td>${place.phone || ""}</td>
       <td>${place.address || ""}</td>
-      <td class="table-row-actions">
-        ${canEdit() ? `
-          <button class="table-icon-btn" type="button" data-edit="${place._index}" title="تعديل" aria-label="تعديل">
-            <i class="fa-solid fa-pen"></i>
-          </button>
-        ` : ""}
-        ${isSuper ? `
-          <button class="table-icon-btn danger" type="button" data-del="${place._index}" title="حذف" aria-label="حذف">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        ` : ""}
+      <td class="table-actions-cell">
+        <div class="table-row-actions">
+          ${canEdit() ? `
+            <button class="table-icon-btn" type="button" data-edit="${place._index}" title="تعديل" aria-label="تعديل">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+          ` : ""}
+          ${isSuper ? `
+            <button class="table-icon-btn danger" type="button" data-del="${place._index}" title="حذف" aria-label="حذف">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          ` : ""}
+        </div>
       </td>
     `;
     tbody.appendChild(row);
@@ -1892,19 +1894,21 @@ function renderApplications() {
       <td>${app.submitted_by_name || "-"}<br><span class="muted">${app.submitted_by_phone || ""}</span></td>
       <td>${applicationStatusLabel(app.status || "pending")}</td>
       <td>${app.submitted_at ? new Date(app.submitted_at).toLocaleString("ar") : "-"}</td>
-      <td class="table-row-actions">
-        <button class="table-icon-btn" type="button" data-app-status="${index}" data-next="in_review" title="قيد المراجعة" aria-label="قيد المراجعة">
-          <i class="fa-solid fa-eye"></i>
-        </button>
-        <button class="table-icon-btn ok" type="button" data-app-status="${index}" data-next="approved" title="قبول" aria-label="قبول">
-          <i class="fa-solid fa-check"></i>
-        </button>
-        <button class="table-icon-btn danger" type="button" data-app-status="${index}" data-next="rejected" title="رفض" aria-label="رفض">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-        <button class="table-icon-btn warn" type="button" data-app-status="${index}" data-next="needs_changes" title="طلب تعديل" aria-label="طلب تعديل">
-          <i class="fa-solid fa-pen-to-square"></i>
-        </button>
+      <td class="table-actions-cell">
+        <div class="table-row-actions">
+          <button class="table-icon-btn" type="button" data-app-status="${index}" data-next="in_review" title="قيد المراجعة" aria-label="قيد المراجعة">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+          <button class="table-icon-btn ok" type="button" data-app-status="${index}" data-next="approved" title="قبول" aria-label="قبول">
+            <i class="fa-solid fa-check"></i>
+          </button>
+          <button class="table-icon-btn danger" type="button" data-app-status="${index}" data-next="rejected" title="رفض" aria-label="رفض">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <button class="table-icon-btn warn" type="button" data-app-status="${index}" data-next="needs_changes" title="طلب تعديل" aria-label="طلب تعديل">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(row);
