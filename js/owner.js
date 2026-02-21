@@ -1,6 +1,7 @@
 const APPLICATIONS_KEY = "healthDutyApplications";
 const LOCATIONS_KEY = "healthDutyLocations";
 const STORAGE_KEY = "places";
+const THEME_KEY = "healthDutyTheme";
 const WEEK_DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
 const ownerName = document.getElementById("ownerName");
@@ -38,6 +39,7 @@ const trackPhone = document.getElementById("trackPhone");
 const trackBtn = document.getElementById("trackBtn");
 const ownerRequestsTable = document.getElementById("ownerRequestsTable");
 const toast = document.getElementById("toast");
+const ownerThemeToggle = document.getElementById("ownerThemeToggle");
 
 let places = [];
 let locations = {};
@@ -113,6 +115,21 @@ function setIntlPhoneValue(input, value) {
   } catch {
     input.value = safeValue;
   }
+}
+
+function applyTheme(mode) {
+  const dark = mode === "dark";
+  document.body.classList.toggle("dark", dark);
+  if (ownerThemeToggle) {
+    ownerThemeToggle.innerHTML = dark
+      ? `<i class="fa-solid fa-sun"></i>`
+      : `<i class="fa-solid fa-moon"></i>`;
+  }
+}
+
+function initTheme() {
+  const mode = localStorage.getItem(THEME_KEY) || "light";
+  applyTheme(mode);
 }
 
 function unique(items, keyGetter) {
@@ -590,6 +607,14 @@ async function init() {
 }
 
 if (governorateInput) governorateInput.addEventListener("change", updateCities);
+if (ownerThemeToggle) {
+  ownerThemeToggle.addEventListener("click", () => {
+    const dark = !document.body.classList.contains("dark");
+    const mode = dark ? "dark" : "light";
+    applyTheme(mode);
+    localStorage.setItem(THEME_KEY, mode);
+  });
+}
 if (requestType) requestType.addEventListener("change", syncUpdateMode);
 if (existingPlace) existingPlace.addEventListener("change", onExistingPlaceChange);
 if (ownerPhone) ownerPhone.addEventListener("input", scheduleRefreshOwnerPlaces);
@@ -634,6 +659,7 @@ workdaysInputs.forEach(input => {
   input.addEventListener("change", syncWorkdaysAll);
 });
 
+initTheme();
 initIntlPhoneInputs();
 clearPlaceForm();
 init();

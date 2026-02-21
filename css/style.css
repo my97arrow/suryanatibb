@@ -1695,6 +1695,79 @@ body.dark .gov-stats-list .rank {
   flex-wrap: wrap;
 }
 
+.owner-page {
+  background:
+    radial-gradient(circle at 80% 10%, rgba(56, 189, 248, 0.16), transparent 28%),
+    radial-gradient(circle at 10% 90%, rgba(16, 185, 129, 0.14), transparent 26%),
+    linear-gradient(160deg, #f8fbff, #eef4fb);
+}
+
+.owner-container {
+  max-width: 1180px;
+}
+
+.owner-header {
+  backdrop-filter: blur(8px);
+}
+
+.owner-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.owner-panel {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+
+.owner-panel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.owner-panel-title i,
+.owner-subtitle i {
+  color: var(--primary);
+}
+
+.owner-subtitle {
+  margin: 16px 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.owner-page .log-panel .btn,
+.owner-page .modal-actions .save,
+.owner-page .modal-actions .cancel {
+  min-height: 42px;
+}
+
+.owner-page #ownerMap {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.owner-page .field label {
+  font-weight: 600;
+}
+
+.owner-page .log-panel input,
+.owner-page .log-panel select {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.16);
+}
+
+.owner-page .log-panel input:focus,
+.owner-page .log-panel select:focus {
+  border-color: rgba(14, 116, 144, 0.5);
+  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.14);
+}
+
 .header-actions .emergency-cta {
   background: linear-gradient(135deg, #ef4444, #f97316);
   color: #fff;
@@ -1726,6 +1799,16 @@ body.dark .gov-stats-list .rank {
     height: 64px;
   }
 
+  .owner-header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .owner-header-actions .btn {
+    width: 100%;
+  }
 }
 
 @media (max-width: 980px) {
@@ -1795,6 +1878,40 @@ body.dark {
 body.dark.admin .site-header {
   background: rgba(15, 23, 42, 0.82);
   border-bottom-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark.owner-page {
+  background:
+    radial-gradient(circle at 82% 8%, rgba(56, 189, 248, 0.16), transparent 30%),
+    radial-gradient(circle at 12% 88%, rgba(16, 185, 129, 0.16), transparent 28%),
+    linear-gradient(160deg, #0b1220, #0f172a);
+}
+
+body.dark.owner-page .site-header {
+  background: rgba(15, 23, 42, 0.82);
+  border-bottom-color: rgba(148, 163, 184, 0.22);
+}
+
+body.dark.owner-page .owner-panel {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.6);
+}
+
+body.dark.owner-page #ownerMap {
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+body.dark.owner-page .log-panel input,
+body.dark.owner-page .log-panel select {
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #e2e8f0;
+}
+
+body.dark.owner-page .owner-header-actions .btn.ghost {
+  background: rgba(148, 163, 184, 0.16);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #e2e8f0;
 }
 
 body.dark .btn.ghost {
