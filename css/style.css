@@ -245,7 +245,8 @@ select:focus {
 
 .map-section #map,
 #detailMap,
-#selectMap {
+#selectMap,
+#ownerMap {
   width: 100%;
   height: 340px;
   border-radius: var(--radius);
@@ -1320,7 +1321,8 @@ body.admin {
 
   .map-section #map,
   #detailMap,
-  #selectMap {
+  #selectMap,
+  #ownerMap {
     height: 280px;
   }
 
@@ -1586,10 +1588,21 @@ body.dark .section-divider {
   font-size: 13px;
 }
 
+#applicationsTable,
+#ownerRequestsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
 #adminTable th,
 #adminTable td,
 #reportsTable th,
-#reportsTable td {
+#reportsTable td,
+#applicationsTable th,
+#applicationsTable td,
+#ownerRequestsTable th,
+#ownerRequestsTable td {
   text-align: right;
   padding: 10px 12px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
@@ -1599,8 +1612,90 @@ body.dark .section-divider {
 body.dark #adminTable th,
 body.dark #adminTable td,
 body.dark #reportsTable th,
-body.dark #reportsTable td {
+body.dark #reportsTable td,
+body.dark #applicationsTable th,
+body.dark #applicationsTable td,
+body.dark #ownerRequestsTable th,
+body.dark #ownerRequestsTable td {
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.owner-requests-table thead th {
+  background: rgba(14, 116, 144, 0.06);
+  font-weight: 700;
+}
+
+.owner-requests-table tbody tr:hover td {
+  background: rgba(14, 116, 144, 0.05);
+}
+
+.owner-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 86px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.owner-status.status-pending {
+  background: rgba(245, 158, 11, 0.14);
+  color: #9a5f04;
+}
+
+.owner-status.status-in-review {
+  background: rgba(59, 130, 246, 0.14);
+  color: #1e3a8a;
+}
+
+.owner-status.status-approved {
+  background: rgba(34, 197, 94, 0.16);
+  color: #166534;
+}
+
+.owner-status.status-rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #991b1b;
+}
+
+.owner-status.status-needs-changes {
+  background: rgba(168, 85, 247, 0.16);
+  color: #5b21b6;
+}
+
+.owner-track-note {
+  margin: 8px 0 14px;
+  font-size: 13px;
+}
+
+body.dark .owner-requests-table thead th {
+  background: rgba(14, 116, 144, 0.18);
+}
+
+body.dark .owner-requests-table tbody tr:hover td {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+body.dark .owner-status.status-pending {
+  color: #facc15;
+}
+
+body.dark .owner-status.status-in-review {
+  color: #93c5fd;
+}
+
+body.dark .owner-status.status-approved {
+  color: #86efac;
+}
+
+body.dark .owner-status.status-rejected {
+  color: #fca5a5;
+}
+
+body.dark .owner-status.status-needs-changes {
+  color: #d8b4fe;
 }
 
 #adminTable tr.row-unverified td {

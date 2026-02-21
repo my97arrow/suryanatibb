@@ -1890,10 +1890,15 @@ async function applyApprovedApplication(application) {
     const placeId = places[idx]?.id || null;
     const savedId = await savePlaceToDb(merged, placeId);
     places[idx] = { ...merged, id: savedId || placeId };
+    return savedId || placeId || null;
   } else {
     const savedId = await savePlaceToDb(payload, null);
     places.push({ ...payload, id: savedId || null });
+    return savedId || null;
   }
+}
+
+function persistPlacesAfterApproval() {
   savePlaces();
 }
 
@@ -1949,7 +1954,11 @@ function renderApplications() {
 
       try {
         if (next === "approved") {
-          await applyApprovedApplication(app);
+          const approvedPlaceId = await applyApprovedApplication(app);
+          if (approvedPlaceId) {
+            app.place_id = approvedPlaceId;
+          }
+          persistPlacesAfterApproval();
         }
         applications[appIdx] = {
           ...applications[appIdx],

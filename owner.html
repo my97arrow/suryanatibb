@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -78,6 +79,10 @@
           <input id="specialty" placeholder="مثال: قلبية، أطفال">
         </div>
         <div class="field">
+          <label for="email">البريد الإلكتروني (اختياري)</label>
+          <input id="email" placeholder="example@email.com">
+        </div>
+        <div class="field">
           <label for="governorate">المحافظة</label>
           <select id="governorate"></select>
         </div>
@@ -98,6 +103,49 @@
           <input id="whatsapp">
         </div>
         <div class="field">
+          <label>ساعات العمل (اختياري)</label>
+          <div class="time-range">
+            <input id="hoursStart" type="time">
+            <span>—</span>
+            <input id="hoursEnd" type="time">
+          </div>
+          <label class="hours-24">
+            <input id="hours24" type="checkbox">
+            يعمل 24 ساعة
+          </label>
+          <input id="hours" type="hidden">
+        </div>
+        <div class="field span-2">
+          <label>أيام العمل</label>
+          <div class="workdays-grid">
+            <label><input id="workdaysAll" type="checkbox" value="all"> كل الأيام</label>
+            <label><input type="checkbox" name="workdays" value="الأحد"> الأحد</label>
+            <label><input type="checkbox" name="workdays" value="الاثنين"> الاثنين</label>
+            <label><input type="checkbox" name="workdays" value="الثلاثاء"> الثلاثاء</label>
+            <label><input type="checkbox" name="workdays" value="الأربعاء"> الأربعاء</label>
+            <label><input type="checkbox" name="workdays" value="الخميس"> الخميس</label>
+            <label><input type="checkbox" name="workdays" value="الجمعة"> الجمعة</label>
+            <label><input type="checkbox" name="workdays" value="السبت"> السبت</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="services">الخدمات (اختياري)</label>
+          <input id="services" placeholder="مثال: قياس ضغط، إسعافات">
+        </div>
+        <div class="field">
+          <label for="notes">ملاحظات (اختياري)</label>
+          <input id="notes" placeholder="ملاحظات إضافية">
+        </div>
+        <div class="field">
+          <label for="image">رابط صورة (اختياري)</label>
+          <input id="image" placeholder="https://...">
+        </div>
+        <div class="field">
+          <label for="imageFile">صورة من الجهاز (اختياري)</label>
+          <input id="imageFile" type="file" accept="image/*" capture="environment">
+        </div>
+        <div id="imagePreview" class="image-preview">لا توجد صورة</div>
+        <div class="field">
           <label for="lat">خط العرض</label>
           <input id="lat" type="number" step="0.000001">
         </div>
@@ -110,6 +158,8 @@
           <input id="ownerNote" placeholder="أي معلومة تساعد على التحقق من الطلب">
         </div>
       </div>
+      <h4>الموقع على الخريطة</h4>
+      <div id="ownerMap"></div>
       <div class="modal-actions">
         <button id="submitApplication" class="save" type="button">إرسال الطلب</button>
       </div>
@@ -127,8 +177,9 @@
           <button id="trackBtn" class="btn ghost" type="button">عرض طلباتي</button>
         </div>
       </div>
+      <p class="muted owner-track-note">في وضع "تعديل مكان موجود"، يجب إدخال رقم هاتف صاحب الطلب أولاً لعرض الأماكن التي أضافها فقط.</p>
       <div class="table-wrap">
-        <table id="ownerRequestsTable">
+        <table id="ownerRequestsTable" class="owner-requests-table">
           <thead>
             <tr>
               <th>نوع الطلب</th>
@@ -147,6 +198,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/dist/umd/supabase.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/owner.js"></script>
 </body>
