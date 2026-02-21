@@ -1328,6 +1328,18 @@ body.admin {
   flex-wrap: wrap;
 }
 
+.header-actions .emergency-cta {
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  color: #fff;
+  border: none;
+  box-shadow: 0 10px 20px rgba(239, 68, 68, 0.28);
+}
+
+.header-actions .emergency-cta:hover {
+  background: linear-gradient(135deg, #dc2626, #ea580c);
+  color: #fff;
+}
+
 @media (max-width: 600px) {
   .cards {
     grid-template-columns: 1fr;
@@ -1383,14 +1395,19 @@ body.admin {
 
   .header-actions {
     width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .header-actions .btn {
-    flex: 1 1 160px;
+    flex: none;
     padding: 6px 8px;
-    font-size: 10px;
+    font-size: 11px;
     gap: 4px;
     min-height: 34px;
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -1407,6 +1424,10 @@ body.dark {
 
 body.dark .site-header {
   background: rgba(15, 23, 42, 0.75);
+}
+
+body.dark .header-actions .emergency-cta {
+  box-shadow: 0 10px 20px rgba(239, 68, 68, 0.36);
 }
 
 body.dark .card,
