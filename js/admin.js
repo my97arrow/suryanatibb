@@ -845,7 +845,7 @@ function logout() {
 }
 
 function setUserBadge() {
-  if (!userBadge || !currentUser) return;
+  if (!currentUser) return;
   const scope = currentUser.role === "super"
     ? "مسؤول مميز"
     : currentUser.role === "governorate"
@@ -853,8 +853,10 @@ function setUserBadge() {
     : currentUser.role === "city"
     ? `مسؤول مدينة: ${currentUser.city}`
     : "مشاهدة فقط";
-  userBadge.textContent = `${currentUser.username} (${scope})`;
-  userBadge.hidden = false;
+  if (userBadge) {
+    userBadge.textContent = `${currentUser.username} (${scope})`;
+    userBadge.hidden = false;
+  }
   if (sidebarUserBadge) {
     sidebarUserBadge.textContent = `${currentUser.username} (${scope})`;
     sidebarUserBadge.hidden = false;
