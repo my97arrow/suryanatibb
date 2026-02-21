@@ -80,7 +80,7 @@ function saveLocal(key, value) {
 
 function initIntlPhoneInputs() {
   if (!window.intlTelInput) return;
-  [ownerPhone, phoneInput, whatsappInput]
+  [ownerPhone, phoneInput, whatsappInput, trackPhone]
     .filter(Boolean)
     .forEach(input => {
       if (intlPhoneInstances.has(input)) return;
@@ -554,7 +554,7 @@ async function submitApplication() {
     showToast("تم الحفظ محلياً فقط، تحقق من الاتصال");
   }
 
-  trackPhone.value = getIntlPhoneValue(ownerPhone);
+  setIntlPhoneValue(trackPhone, getIntlPhoneValue(ownerPhone));
   await renderOwnerRequests();
 }
 
@@ -562,7 +562,7 @@ async function renderOwnerRequests() {
   const tbody = ownerRequestsTable?.querySelector("tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
-  const phone = trackPhone?.value.trim();
+  const phone = getIntlPhoneValue(trackPhone);
   if (!phone) return;
 
   const localApps = loadLocal(APPLICATIONS_KEY, []).filter(app => normalize(app.submitted_by_phone) === normalize(phone));
