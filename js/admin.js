@@ -1,5 +1,6 @@
 ﻿const STORAGE_KEY = "places";
 const USERS_KEY = "healthDutyUsers";
+const USERS_TABLE = "admin_users";
 const SESSION_KEY = "healthDutySession";
 const LOG_KEY = "healthDutyLogs";
 const UPDATED_KEY = "healthDutyUpdated";
@@ -482,24 +483,96 @@ function saveUsers(list) {
   localStorage.setItem(USERS_KEY, JSON.stringify(list));
 }
 
-function ensureDefaultUser() {
-  const users = loadUsers();
-  if (!users.length) {
-    users.push({ username: "admin", password: "admin123", role: "super" });
+function sanitizeUserRecord(user) {
+  if (!user?.username) return null;
+  return {
+    username: String(user.username).trim(),
+    password: String(user.password || ""),
+    role: String(user.role || "viewer"),
+    governorate: String(user.governorate || ""),
+    city: String(user.city || ""),
+    phone: String(user.phone || ""),
+    address: String(user.address || ""),
+    full_name: String(user.full_name || "")
+  };
+}
+
+function ensureCoreUsers(users = []) {
+  const list = (Array.isArray(users) ? users : [])
+    .map(sanitizeUserRecord)
+    .filter(Boolean);
+  if (!list.find(u => normalize(u.username) === "admin")) {
+    list.push({ username: "admin", password: "admin123", role: "super", governorate: "", city: "", phone: "", address: "", full_name: "" });
   }
-  const rootIndex = users.findIndex(u => normalize(u.username) === "my97arrow");
+  const rootIndex = list.findIndex(u => normalize(u.username) === "my97arrow");
   const rootUser = {
     username: "my97arrow",
     password: "1997",
     role: "root",
+    governorate: "",
+    city: "",
+    phone: "",
+    address: "",
     full_name: "مصعب الاحمد"
   };
-  if (rootIndex === -1) {
-    users.push(rootUser);
-  } else {
-    users[rootIndex] = { ...users[rootIndex], ...rootUser };
+  if (rootIndex === -1) list.push(rootUser);
+  else list[rootIndex] = { ...list[rootIndex], ...rootUser };
+  return list;
+}
+
+async function loadUsersFromDb() {
+  if (!window.supabaseClient) return null;
+  try {
+    const { data, error } = await window.supabaseClient
+      .from(USERS_TABLE)
+      .select("*")
+      .order("username", { ascending: true });
+    if (error) throw error;
+    return data || [];
+  } catch {
+    return null;
   }
+}
+
+async function upsertUserToDb(user) {
+  if (!window.supabaseClient || !user?.username) return;
+  try {
+    await window.supabaseClient.from(USERS_TABLE).upsert(user, { onConflict: "username" });
+  } catch {
+    // keep local only
+  }
+}
+
+async function deleteUserFromDb(username) {
+  if (!window.supabaseClient || !username) return;
+  try {
+    await window.supabaseClient.from(USERS_TABLE).delete().eq("username", username);
+  } catch {
+    // keep local only
+  }
+}
+
+async function syncUsersFromDb() {
+  const localUsers = ensureCoreUsers(loadUsers());
+  const dbUsers = await loadUsersFromDb();
+  let merged = [...localUsers];
+  if (Array.isArray(dbUsers)) {
+    const userMap = new Map();
+    dbUsers.map(sanitizeUserRecord).filter(Boolean).forEach(u => userMap.set(normalize(u.username), u));
+    localUsers.forEach(u => userMap.set(normalize(u.username), { ...userMap.get(normalize(u.username)), ...u }));
+    merged = [...userMap.values()];
+  }
+  saveUsers(merged);
+  if (Array.isArray(dbUsers) && window.supabaseClient) {
+    await Promise.all(merged.map(u => upsertUserToDb(u)));
+  }
+}
+
+function ensureDefaultUser() {
+  const users = ensureCoreUsers(loadUsers());
   saveUsers(users);
+  upsertUserToDb(users.find(u => normalize(u.username) === "admin"));
+  upsertUserToDb(users.find(u => normalize(u.username) === "my97arrow"));
 }
 
 function loadSession() {
@@ -829,7 +902,9 @@ function restoreBackup() {
   renderAdmin();
 }
 
-function login() {
+async function login() {
+  await syncUsersFromDb();
+  ensureDefaultUser();
   const user = normalize(loginUser?.value);
   const pass = loginPass?.value || "";
   const users = loadUsers();
@@ -1785,12 +1860,13 @@ function renderUsers() {
   });
 
   tbody.querySelectorAll("[data-user]").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const target = loadUsers().find(u => u.username === btn.dataset.user);
       if (!canManageUser(target)) {
         alert("لا تملك صلاحية حذف هذا المستخدم");
         return;
       }
+      await deleteUserFromDb(btn.dataset.user);
       const users = loadUsers().filter(u => u.username !== btn.dataset.user);
       saveUsers(users);
       logAction("تم حذف مستخدم");
@@ -1822,7 +1898,7 @@ function renderUsers() {
   });
 }
 
-function addUser() {
+async function addUser() {
   if (!canAccessUserManagement(currentUser)) {
     alert("لا تملك صلاحية إدارة المستخدمين");
     return;
@@ -1852,6 +1928,7 @@ function addUser() {
   }
 
   const newUser = { username, password, role, governorate: gov, city: cityVal, phone, address: addressVal };
+  await upsertUserToDb(newUser);
   users.push(newUser);
   saveUsers(users);
   logAction("تمت إضافة مستخدم");
@@ -1859,7 +1936,7 @@ function addUser() {
   resetUserFormState();
 }
 
-function updateUser() {
+async function updateUser() {
   if (!editingUser) return;
   if (!canAccessUserManagement(currentUser)) {
     alert("لا تملك صلاحية إدارة المستخدمين");
@@ -1881,7 +1958,7 @@ function updateUser() {
     return;
   }
 
-  users[idx] = {
+  const updatedUser = {
     ...users[idx],
     password: userPass?.value || users[idx].password,
     role: nextRole,
@@ -1890,6 +1967,8 @@ function updateUser() {
     phone: getIntlPhoneValue(userPhone),
     address: userAddress?.value || ""
   };
+  await upsertUserToDb(updatedUser);
+  users[idx] = updatedUser;
   saveUsers(users);
   logAction("تم تحديث بيانات مستخدم");
   renderUsers();
@@ -2445,6 +2524,8 @@ function renderPagination(container, totalItems, current, onPage) {
 
 async function bootApp() {
   if (!currentUser) return;
+  await syncUsersFromDb();
+  ensureDefaultUser();
   setAdminSidebarOpen(false);
   if (loginPanel) loginPanel.hidden = true;
   if (adminApp) adminApp.hidden = false;
@@ -2645,16 +2726,21 @@ window.addEventListener("resize", () => {
   }
 });
 
-initTheme();
-initIntlPhoneInputs();
-ensureDefaultUser();
-locations = loadLocations();
-specialties = loadSpecialties();
-const session = loadSession();
-if (session) {
-  currentUser = session;
-  bootApp();
-} else {
-  if (loginPanel) loginPanel.hidden = false;
-  if (adminApp) adminApp.hidden = true;
+async function initAdminPage() {
+  initTheme();
+  initIntlPhoneInputs();
+  await syncUsersFromDb();
+  ensureDefaultUser();
+  locations = loadLocations();
+  specialties = loadSpecialties();
+  const session = loadSession();
+  if (session) {
+    currentUser = session;
+    await bootApp();
+  } else {
+    if (loginPanel) loginPanel.hidden = false;
+    if (adminApp) adminApp.hidden = true;
+  }
 }
+
+initAdminPage();
