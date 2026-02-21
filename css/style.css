@@ -1450,6 +1450,23 @@ body.admin {
   z-index: 30;
 }
 
+.admin-sidebar-user {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(15, 23, 42, 0.16);
+  display: grid;
+  gap: 8px;
+}
+
+.sidebar-user-badge {
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(14, 116, 144, 0.08);
+  border: 1px solid rgba(14, 116, 144, 0.16);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
 .admin-sidebar-backdrop {
   position: fixed;
   inset: 0;
@@ -1502,8 +1519,47 @@ body.dark .admin-sidebar {
   border-color: rgba(148, 163, 184, 0.2);
 }
 
+body.dark.admin .btn {
+  border: 1px solid transparent;
+}
+
+body.dark.admin .btn.ghost {
+  background: rgba(148, 163, 184, 0.16);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #e2e8f0;
+}
+
+body.dark.admin .btn.ghost:hover {
+  border-color: rgba(125, 211, 252, 0.5);
+  background: rgba(56, 189, 248, 0.2);
+}
+
+body.dark.admin .btn.primary {
+  border-color: rgba(56, 189, 248, 0.34);
+}
+
+body.dark.admin .btn.danger {
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+body.dark.admin .admin-nav-btn {
+  background: #17243a;
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #e2e8f0;
+}
+
 body.dark .admin-sidebar-backdrop {
   background: rgba(2, 6, 23, 0.66);
+}
+
+body.dark .admin-sidebar-user {
+  border-top-color: rgba(148, 163, 184, 0.28);
+}
+
+body.dark .sidebar-user-badge {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(125, 211, 252, 0.25);
+  color: #cfe9ff;
 }
 
 body.dark .admin-nav-btn {

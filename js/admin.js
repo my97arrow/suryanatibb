@@ -229,6 +229,8 @@ const adminSidebar = document.getElementById("adminSidebar");
 const adminSidebarBackdrop = document.getElementById("adminSidebarBackdrop");
 const adminMenuToggle = document.getElementById("adminMenuToggle");
 const adminThemeToggle = document.getElementById("adminThemeToggle");
+const sidebarUserBadge = document.getElementById("sidebarUserBadge");
+const sidebarLogoutBtn = document.getElementById("sidebarLogoutBtn");
 const dashboardSection = document.getElementById("dashboardSection");
 const placesSection = document.getElementById("placesSection");
 const activityPanel = document.getElementById("activityPanel");
@@ -837,7 +839,9 @@ function logout() {
   if (adminApp) adminApp.hidden = true;
   if (loginPanel) loginPanel.hidden = false;
   if (userBadge) userBadge.hidden = true;
+  if (sidebarUserBadge) sidebarUserBadge.hidden = true;
   if (logoutBtn) logoutBtn.hidden = true;
+  if (sidebarLogoutBtn) sidebarLogoutBtn.hidden = true;
 }
 
 function setUserBadge() {
@@ -851,6 +855,11 @@ function setUserBadge() {
     : "مشاهدة فقط";
   userBadge.textContent = `${currentUser.username} (${scope})`;
   userBadge.hidden = false;
+  if (sidebarUserBadge) {
+    sidebarUserBadge.textContent = `${currentUser.username} (${scope})`;
+    sidebarUserBadge.hidden = false;
+  }
+  if (sidebarLogoutBtn) sidebarLogoutBtn.hidden = false;
 }
 
 function canEdit() {
@@ -2391,6 +2400,7 @@ if (loginPass) {
   });
 }
 if (logoutBtn) logoutBtn.addEventListener("click", logout);
+if (sidebarLogoutBtn) sidebarLogoutBtn.addEventListener("click", logout);
 if (addUserBtn) addUserBtn.addEventListener("click", addUser);
 if (userRole) userRole.addEventListener("change", updateUserScopeForm);
 if (updateUserBtn) updateUserBtn.addEventListener("click", updateUser);
