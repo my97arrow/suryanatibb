@@ -1491,6 +1491,10 @@ body.dark .admin-divider {
   border-top-color: rgba(226, 232, 240, 0.22);
 }
 
+body.dark .emergency-item {
+  background: rgba(148, 163, 184, 0.16);
+}
+
 body.dark .detail-info,
 body.dark .detail-schedule {
   background: rgba(15, 23, 42, 0.6);

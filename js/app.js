@@ -407,46 +407,6 @@ function distanceKm(a, b) {
   return 2 * r * Math.asin(Math.sqrt(h));
 }
 
-function placeQuality(place) {
-  let score = 0;
-  if (normalize(place.name)) score += 20;
-  if (normalize(place.type)) score += 10;
-  if (normalize(place.governorate)) score += 10;
-  if (normalize(place.city)) score += 10;
-  if (place.lat && place.lng) score += 20;
-  if (normalize(place.phone) || normalize(place.whatsapp)) score += 15;
-  if (normalize(place.address)) score += 10;
-  if (normalize(place.specialty)) score += 5;
-  if (score >= 80) return { score, level: "high", label: "جودة عالية" };
-  if (score >= 55) return { score, level: "mid", label: "جودة متوسطة" };
-  return { score, level: "low", label: "جودة ضعيفة" };
-}
-
-function freshnessScore(place) {
-  const iso = place.updated_at || place.verified_at;
-  if (!iso) return 0;
-  const t = new Date(iso).getTime();
-  if (!Number.isFinite(t)) return 0;
-  const days = Math.max(0, (Date.now() - t) / 86400000);
-  if (days <= 7) return 15;
-  if (days <= 30) return 8;
-  if (days <= 90) return 4;
-  return 0;
-}
-
-function rankPlace(place) {
-  const quality = placeQuality(place).score * 0.6;
-  const verify = place.verified ? 25 : 0;
-  const duty = place.type === "pharmacy" && place.onDuty ? 20 : 0;
-  const fresh = freshnessScore(place);
-  let proximity = 0;
-  if (userLocation && place.lat && place.lng) {
-    const km = distanceKm(userLocation, place);
-    proximity = Math.max(0, 25 - Math.min(25, km));
-  }
-  return quality + verify + duty + fresh + proximity;
-}
-
 function findNearestBy(list, predicate) {
   if (!userLocation) return null;
   const candidates = list.filter(p => p.lat && p.lng && predicate(p));
@@ -469,11 +429,9 @@ function closeEmergencyModal() {
 }
 
 async function runEmergencyMode() {
+  if (!userLocation) await locateUser(false);
   if (!userLocation) {
-    await locateUser(false);
-  }
-  if (!userLocation) {
-    showToast("يلزم تفعيل الموقع لاستخدام وضع الطوارئ");
+    showToast("يرجى تفعيل الموقع لاستخدام وضع الطوارئ");
     return;
   }
 
@@ -530,7 +488,6 @@ function renderCards(list) {
     const hasPhone = !!normalize(place.phone);
     const hasWhatsapp = !!normalize(place.whatsapp);
 
-    const quality = placeQuality(place);
     card.innerHTML = `
       <div class="card-head">
         ${
@@ -547,8 +504,6 @@ function renderCards(list) {
           <p class="muted">
             ${typeLabel(place.type)}
             ${shouldShowDutyBadge(place.type) && place.onDuty ? `<span class="badge on inline-badge">مناوب</span>` : ""}
-            ${place.verified ? `<span class="quality-badge high">موثّق</span>` : ""}
-            <span class="quality-badge ${quality.level}">${quality.label}</span>
           </p>
         </div>
       </div>
@@ -716,8 +671,6 @@ function applyFilters() {
       if (!b.lat || !b.lng) return -1;
       return distanceKm(userLocation, a) - distanceKm(userLocation, b);
     });
-  } else if (sortBy === "default") {
-    filtered = [...filtered].sort((a, b) => rankPlace(b) - rankPlace(a));
   }
 
   currentPage = 1;
@@ -868,6 +821,11 @@ async function init() {
       if (elements.sortBy) elements.sortBy.value = userLocation ? "distance" : "onDuty";
       applyFilters();
       closeEmergencyModal();
+    });
+  }
+  if (elements.emergencyModal) {
+    elements.emergencyModal.addEventListener("click", event => {
+      if (event.target === elements.emergencyModal) closeEmergencyModal();
     });
   }
 

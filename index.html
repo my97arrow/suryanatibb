@@ -27,6 +27,10 @@
       </div>
     </div>
     <div class="header-actions">
+      <button id="emergencyMode" class="btn ghost" type="button">
+        <i class="fa-solid fa-truck-medical"></i>
+        الطوارئ
+      </button>
       <button id="themeToggle" class="btn ghost" type="button">
         <i class="fa-solid fa-moon"></i>
         المظهر
@@ -171,6 +175,16 @@
 
 <div id="statusBar" class="status-bar" hidden></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<div id="emergencyModal" class="modal" aria-hidden="true">
+  <div class="modal-box">
+    <h3>وضع الطوارئ</h3>
+    <div id="emergencyBody" class="emergency-body"></div>
+    <div class="modal-actions">
+      <button id="emergencyApply" class="save" type="button">تطبيق فلتر الطوارئ</button>
+      <button id="emergencyClose" class="cancel" type="button">إغلاق</button>
+    </div>
+  </div>
+</div>
 
 <div id="emergencyModal" class="modal" aria-hidden="true">
   <div class="modal-box">
