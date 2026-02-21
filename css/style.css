@@ -1443,7 +1443,15 @@ body.dark .site-header {
 }
 
 body.dark .header-actions .emergency-cta {
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  border: none;
+  color: #fff;
   box-shadow: 0 10px 20px rgba(239, 68, 68, 0.36);
+}
+
+body.dark .header-actions .emergency-cta:hover {
+  background: linear-gradient(135deg, #dc2626, #ea580c);
+  color: #fff;
 }
 
 body.dark .card,
