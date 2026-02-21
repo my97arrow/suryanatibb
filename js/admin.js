@@ -1485,7 +1485,6 @@ function renderAdmin() {
     row.innerHTML = `
       <td>
         <strong>${place.name}</strong>
-        <div class="muted">${place.specialty || "بدون اختصاص"}</div>
       </td>
       <td>${typeLabel(place.type)}</td>
       <td>${place.governorate || ""}</td>
