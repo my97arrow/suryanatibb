@@ -1311,10 +1311,22 @@ function renderAdmin() {
       <td>${place.city || ""}</td>
       <td>${place.phone || ""}</td>
       <td>${place.address || ""}</td>
-      <td>
-        ${canEdit() ? `<button class="btn ghost" data-edit="${place._index}">تعديل</button>` : ""}
-        ${isSuper ? `<button class="btn ghost" data-verify="${place._index}">${place.verified ? "إلغاء توثيق" : "توثيق"}</button>` : ""}
-        ${isSuper ? `<button class="btn danger" data-del="${place._index}">حذف</button>` : ""}
+      <td class="table-row-actions">
+        ${canEdit() ? `
+          <button class="table-icon-btn" type="button" data-edit="${place._index}" title="تعديل" aria-label="تعديل">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+        ` : ""}
+        ${isSuper ? `
+          <button class="table-icon-btn ${place.verified ? "warn" : "ok"}" type="button" data-verify="${place._index}" title="${place.verified ? "إلغاء التوثيق" : "توثيق"}" aria-label="${place.verified ? "إلغاء التوثيق" : "توثيق"}">
+            <i class="fa-solid ${place.verified ? "fa-shield-halved" : "fa-shield-check"}"></i>
+          </button>
+        ` : ""}
+        ${isSuper ? `
+          <button class="table-icon-btn danger" type="button" data-del="${place._index}" title="حذف" aria-label="حذف">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        ` : ""}
       </td>
     `;
     tbody.appendChild(row);
@@ -1959,14 +1971,14 @@ function renderApplications() {
         reviewNote = prompt("أدخل سبب القرار:", app.review_note || "") || "";
       }
 
-      try {
-        if (next === "approved") {
-          const approvedPlaceId = await applyApprovedApplication(app);
-          if (approvedPlaceId) {
-            app.place_id = approvedPlaceId;
+        try {
+          if (next === "approved") {
+            const approvedPlaceId = await applyApprovedApplication(app);
+            if (approvedPlaceId) {
+              app.place_id = approvedPlaceId;
+            }
+            persistPlacesAfterApproval();
           }
-          persistPlacesAfterApproval();
-        }
         applications[appIdx] = {
           ...applications[appIdx],
           status: next,
@@ -1981,6 +1993,9 @@ function renderApplications() {
           // keep local
         }
         logAction(`تحديث طلب ${app.payload?.name || ""} إلى ${applicationStatusLabel(next)}`);
+        if (next === "approved" && applicationFilterStatus && applicationFilterStatus.value === "all") {
+          applicationFilterStatus.value = "pending";
+        }
         renderApplications();
         renderAdmin();
       } catch {

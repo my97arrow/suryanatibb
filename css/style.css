@@ -1653,6 +1653,10 @@ body.dark .section-divider {
 
 .table-wrap {
   overflow-x: auto;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-soft);
 }
 
 #adminTable {
@@ -1688,6 +1692,28 @@ body.dark .section-divider {
   vertical-align: middle;
 }
 
+#adminTable thead th,
+#reportsTable thead th,
+#applicationsTable thead th,
+#ownerRequestsTable thead th {
+  background: rgba(14, 116, 144, 0.07);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+#adminTable tbody tr:hover td,
+#reportsTable tbody tr:hover td,
+#applicationsTable tbody tr:hover td,
+#ownerRequestsTable tbody tr:hover td {
+  background: rgba(14, 116, 144, 0.05);
+}
+
+#adminTable td,
+#reportsTable td,
+#applicationsTable td {
+  font-size: 13px;
+}
+
 body.dark #adminTable th,
 body.dark #adminTable td,
 body.dark #reportsTable th,
@@ -1697,6 +1723,88 @@ body.dark #applicationsTable td,
 body.dark #ownerRequestsTable th,
 body.dark #ownerRequestsTable td {
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+body.dark .table-wrap {
+  background: #111d30;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark #adminTable thead th,
+body.dark #reportsTable thead th,
+body.dark #applicationsTable thead th,
+body.dark #ownerRequestsTable thead th {
+  background: rgba(56, 189, 248, 0.16);
+}
+
+body.dark #adminTable tbody tr:hover td,
+body.dark #reportsTable tbody tr:hover td,
+body.dark #applicationsTable tbody tr:hover td,
+body.dark #ownerRequestsTable tbody tr:hover td {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.table-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.table-icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(148, 163, 184, 0.16);
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.table-icon-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(14, 116, 144, 0.45);
+}
+
+.table-icon-btn.ok {
+  color: #166534;
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.table-icon-btn.warn {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.table-icon-btn.danger {
+  color: #991b1b;
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.36);
+}
+
+body.dark .table-icon-btn {
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.34);
+  color: #e2e8f0;
+}
+
+body.dark .table-icon-btn.ok {
+  color: #86efac;
+}
+
+body.dark .table-icon-btn.warn {
+  color: #fcd34d;
+}
+
+body.dark .table-icon-btn.danger {
+  color: #fca5a5;
 }
 
 .owner-requests-table thead th {
